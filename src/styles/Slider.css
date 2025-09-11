@@ -1,0 +1,8 @@
+.slider {
+  display: flex;
+  flex-direction: row;
+}
+
+.slider input {
+  margin: 15px;
+}

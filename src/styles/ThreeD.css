@@ -1,0 +1,42 @@
+.model {
+  width: 30vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+}
+
+.model input[type="range"] {
+  -webkit-appearance: none; /* remove default look in WebKit browsers */
+  appearance: none;
+  width: 100%;
+  background: transparent; /* so only our custom track shows */
+}
+
+/* Track */
+.model input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-top: 2px dashed #333;
+  background: transparent;
+}
+.model input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-top: 2px dashed #333;
+  background: transparent;
+}
+
+/* Thumb (handle) */
+.model input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  background: #000000; 
+  cursor: pointer;
+  margin-top: -9px; 
+}
+.model input[type="range"]::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  background: #000000;
+  cursor: pointer;
+}

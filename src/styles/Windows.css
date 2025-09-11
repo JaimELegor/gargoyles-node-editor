@@ -1,0 +1,48 @@
+.window {
+  width: 310px;
+  height: 700px;
+  background: white;
+  border-top: 2px solid #fff;    /* light edge */
+  border-left: 2px solid #fff;
+  border-right: 2px solid #666;  /* dark edge */
+  border-bottom: 2px solid #666;
+  box-shadow: inset -1px -1px 0 #999, inset 1px 1px 0 #ccc;
+  margin: 20px;
+  margin-right: 100px;
+}
+.title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #000082;
+  color: white;
+  padding: 4px 8px;
+  font-weight: bold;
+  font-size: 14px;
+  font-family: "MS Sans Serif", "Tahoma", sans-serif;
+  
+  /* Kill smoothing for that sharp pixel look */
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  font-smooth: never;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.window-body {
+  padding: 10px;
+  font-size: 14px;
+  padding-right: 17px;
+}

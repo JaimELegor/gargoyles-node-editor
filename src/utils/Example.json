@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    { "id": "DotMatrix", "label": "DotMatrix", "x": 100, "y": 200, "params": { "cellSize": 0.5 }  },
+    { "id": "Grayscale", "label": "Grayscale", "x": 150, "y": 250, "params": { "intensity": 0.5} },
+    { "id": "Saturation", "label": "Saturation", "x": 200, "y": 300, "params": { "amount": 0}  }
+  ],
+  "edges": [
+    { "from": "DotMatrix", "to": "Grayscale" },
+    { "from": "Grayscale", "to": "Saturation" }
+  ]
+}
