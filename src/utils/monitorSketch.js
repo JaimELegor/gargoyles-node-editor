@@ -65,7 +65,7 @@ export function monitorSketch(p5) {
 
   p5.setup = () => {
     p5.createCanvas(256, 256); // 2D canvas for easier debugging
-    p5.loadImage("texture_0.png", (loadedImage) => {
+    p5.loadImage("/texture_0.png", (loadedImage) => {
       monitor = loadedImage;
       img = monitor.get();
     });

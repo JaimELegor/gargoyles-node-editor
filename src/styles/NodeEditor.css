@@ -52,6 +52,7 @@
   z-index: 1;
   cursor: grab;
   user-select: none;
+  color: 'black';
 }
 
 .node:active {
@@ -68,7 +69,7 @@
 .static {
   width: 225px;
   height: 225px;
-  background: url("static.png");
+  background: url("/static.png");
 }
 
 .main-image,

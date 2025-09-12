@@ -34,7 +34,6 @@ export function FilterProvider({ children }) {
     setFilterFunctions(updated);
     const previews = order.map((name) => { return { name, blob: null }; });
     setNodePreviews(previews);
-    console.log("order", order);
   }, [order]);
 
   useEffect(() => {

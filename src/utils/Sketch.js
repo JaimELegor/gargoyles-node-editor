@@ -1,5 +1,6 @@
 
 export let savedP5Instance = null;
+
 export function sketch(p5) {
   let img;
   let original;
@@ -12,45 +13,59 @@ export function sketch(p5) {
   savedP5Instance = p5;
 
   function getParamValues(name, paramsMap) {
-  if (!paramsMap || !paramsMap[name]) return [];
-  return Object.values(paramsMap[name]);
-}
+    if (!paramsMap || !paramsMap[name]) return [];
+    return Object.values(paramsMap[name]);
+  }
+
+  function getScaledSize(imgWidth, imgHeight, maxSize = 1000) {
+    let scale = Math.min(maxSize / imgWidth, maxSize / imgHeight, 1);
+    return [imgWidth * scale, imgHeight * scale];
+  }
 
   p5.updateWithProps = (props) => {
-    if (props.imgSrc && props.imgSrc !== currentSrc) {
-      p5.loadImage(props.imgSrc, (loadedImage) => {
-        original = loadedImage;
-        img = original.get();
-        processed = false;
-        currentSrc = props.imgSrc;
+  if (props.imgSrc && props.imgSrc !== currentSrc) {
+    p5.loadImage(props.imgSrc, (loadedImage) => {
+      original = loadedImage;
+      img = original.get();
+      processed = false;
+      currentSrc = props.imgSrc;
 
-        filter = props.filter;
-        filterFlag = true;
-      });
-    }
-    if (props.paramsMap) {
-      paramsMap = props.paramsMap;
-      if (original) {
-        img = original.get();
-        processed = false;
-      }
-    }
+      // Scale canvas proportionally if larger than 1000x1000
+      const [w, h] = getScaledSize(original.width, original.height);
+      p5.resizeCanvas(w, h);
 
-    if (props.filter) {
+      // Call parent callback with new canvas size
+      if (props.onResize) props.onResize({ width: w, height: h });
+
       filter = props.filter;
-      if (original) {
-        img = original.get();
-        processed = false;
-      }
-    }
+      filterFlag = true;
+    });
+  }
 
-    if (props.onCanvasImage) {
-      onCanvasImage = props.onCanvasImage; // store callback
+  if (props.paramsMap) {
+    paramsMap = props.paramsMap;
+    if (original) {
+      img = original.get();
+      processed = false;
     }
-  };
+  }
+
+  if (props.filter) {
+    filter = props.filter;
+    if (original) {
+      img = original.get();
+      processed = false;
+    }
+  }
+
+  if (props.onCanvasImage) {
+    onCanvasImage = props.onCanvasImage; // store callback
+  }
+};
 
   p5.setup = () => {
-    p5.createCanvas(600, 400); // 2D canvas for easier debugging
+    // Temporary default canvas size
+    p5.createCanvas(100, 100);
   };
 
   p5.draw = () => {
@@ -64,8 +79,7 @@ export function sketch(p5) {
       const b = img.pixels[i + 2];
       const a = img.pixels[i + 3];
       return [r, g, b, a];
-    }
-
+    };
 
     const process = (func, params) => {
       for (let y = 0; y < img.height; y++) {
@@ -74,23 +88,22 @@ export function sketch(p5) {
           func(img, r, g, b, a, x, y, ...params);
         }
       }
-    }
+    };
 
     if (filterFlag && filter && filter.length > 0 && !processed) {
       img.loadPixels();
-      
+
       filter.forEach(({ name, func }) => {
-
         process(func, getParamValues(name, paramsMap));
-
       });
 
       img.updatePixels();
       processed = true;
-
     }
 
-    p5.image(img, 0, 0, 600, 400);
+    // Draw the image scaled to canvas size
+    p5.image(img, 0, 0, p5.width, p5.height);
+
     if (onCanvasImage && p5.canvas) {
       onCanvasImage(p5.canvas);
     }

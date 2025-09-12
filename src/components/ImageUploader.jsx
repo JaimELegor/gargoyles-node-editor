@@ -1,9 +1,11 @@
 // src/components/ImageUploader.jsx
 import React, { useState, useRef } from "react";
+import { useImage } from "../contexts/ImageContext";
 
 export default function ImageUploader({ onImageLoad }) {
   const fileInputRef = useRef();
   const [opened, setOpened] = useState(false);
+  const { canvasSize } = useImage();
   const handleFiles = (files) => {
     const file = files[0];
     if (file && file.type.startsWith("image/")) {
@@ -38,6 +40,7 @@ export default function ImageUploader({ onImageLoad }) {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       className={opened ? "overlay" : "overlay-static"}
+      style={{ width: (opened ? String(canvasSize.width) + "px" : "600px"), height: (opened ? String(canvasSize.height) + "px": "400px" )}}
       onClick={() => fileInputRef.current.click()}
     >
       <svg style={{ display: "none" }}>

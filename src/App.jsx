@@ -7,6 +7,7 @@ import Menu from "./components/Menu";
 import CanvasMain from "./components/MainCanvas";
 import CanvasPreview from "./components/InvisibleCanvas";
 import Marquee from './components/MarqueeMotd';
+import CanvasWEBGL from './components/WEBGLCanvas';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
               <div className="sub-main">
                 <CanvasMain />
                 <NodeEditor />
+                {/*<CanvasWEBGL />*/}
               </div>
             </div>
             <CanvasPreview />

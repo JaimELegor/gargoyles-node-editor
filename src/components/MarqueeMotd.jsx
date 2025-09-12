@@ -20,7 +20,7 @@ export default function Marquee() {
 
       <div className="marquee-wrapper">
         {/* Apply the filter via CSS */}
-        <div className="marquee-track" style={{ filter: "url(#text-blur)" }}>
+        <div className="marquee-track" style={{ filter: "url(#text-blur)", color: "black" }}>
           🚨 Breaking News: DITHERBOY SUCKS ASS —
           🚨 Breaking News: DITHERBOY SUCKS ASS —
           🚨 Breaking News: DITHERBOY SUCKS ASS —

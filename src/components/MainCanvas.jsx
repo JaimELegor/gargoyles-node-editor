@@ -6,8 +6,8 @@ import ImageUploader from "./ImageUploader";
 import '../styles/MainCanvas.css';
 
 export default function CanvasMain() {
-  const { imgDataURL, setImgDataURL, setMainCanvas } = useImage();
-  const { filterValues, filterFunctions } = useFilter()
+  const { imgDataURL, setImgDataURL, setMainCanvas, setCanvasSize } = useImage();
+  const { filterValues, filterFunctions } = useFilter();
 
   return (
     <div className="content-wrapper">
@@ -21,6 +21,10 @@ export default function CanvasMain() {
                               filter={filterFunctions}
                               filterFlag={true}
                               onCanvasImage={(canvas) => setMainCanvas(canvas)} 
+                              onResize={({ width, height }) => {
+    console.log("Canvas resized:", width, height);
+    setCanvasSize({ width, height });
+  }}
                             />
                           </>
                         )}

@@ -19,8 +19,6 @@
   cursor: pointer;
   top: 0;
   left: 0;
-  width: 600px;
-  height: 400px;
   background: rgba(0, 0, 0, 0.6); /* Transparent dark overlay */
   color: white;
   display: flex;
