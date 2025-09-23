@@ -1,4 +1,3 @@
-
 export let savedP5Instance = null;
 
 export function sketch(p5) {
@@ -17,51 +16,85 @@ export function sketch(p5) {
     return Object.values(paramsMap[name]);
   }
 
-  function getScaledSize(imgWidth, imgHeight, maxSize = 1000) {
-    let scale = Math.min(maxSize / imgWidth, maxSize / imgHeight, 1);
-    return [imgWidth * scale, imgHeight * scale];
+function getScaledSize(imgWidth, imgHeight, minSize = 500, maxSize = 1000) {
+  const aspect = imgWidth / imgHeight;
+
+  // Start by limiting the larger dimension to maxSize
+  let w = imgWidth;
+  let h = imgHeight;
+
+  if (w > maxSize) {
+    w = maxSize;
+    h = Math.round(w / aspect);
   }
+  if (h > maxSize) {
+    h = maxSize;
+    w = Math.round(h * aspect);
+  }
+
+  // Then enforce minSize, scaling up if necessary
+  if (w < minSize) {
+    w = minSize;
+    h = Math.round(w / aspect);
+  }
+  if (h < minSize) {
+    h = minSize;
+    w = Math.round(h * aspect);
+  }
+
+  return [w, h];
+}
 
   p5.updateWithProps = (props) => {
-  if (props.imgSrc && props.imgSrc !== currentSrc) {
-    p5.loadImage(props.imgSrc, (loadedImage) => {
-      original = loadedImage;
-      img = original.get();
-      processed = false;
-      currentSrc = props.imgSrc;
+    if (props.imgSrc && props.imgSrc !== currentSrc) {
+      p5.loadImage(props.imgSrc, (loadedImage) => {
+        original = loadedImage;
+        img = original.get();
+        processed = false;
+        currentSrc = props.imgSrc;
 
-      // Scale canvas proportionally if larger than 1000x1000
-      const [w, h] = getScaledSize(original.width, original.height);
-      p5.resizeCanvas(w, h);
+        // compute scaled size with both min and max
+        const [w, h] = getScaledSize(original.width, original.height, 400, 900);
 
-      // Call parent callback with new canvas size
-      if (props.onResize) props.onResize({ width: w, height: h });
+        // Resize the p5 canvas to the exact pixel size
+        p5.resizeCanvas(w, h);
 
+        // Make sure the DOM canvas element also uses the same pixel & style size
+        if (p5.canvas) {
+          p5.canvas.width = w;
+          p5.canvas.height = h;
+          p5.canvas.style.width = `${w}px`;
+          p5.canvas.style.height = `${h}px`;
+        }
+
+        // Notify parent
+        if (props.onResize) props.onResize({ width: w, height: h });
+
+        filter = props.filter;
+        filterFlag = true;
+      });
+    }
+
+    if (props.paramsMap) {
+      paramsMap = props.paramsMap;
+      if (original) {
+        img = original.get();
+        processed = false;
+      }
+    }
+
+    if (props.filter) {
       filter = props.filter;
-      filterFlag = true;
-    });
-  }
-
-  if (props.paramsMap) {
-    paramsMap = props.paramsMap;
-    if (original) {
-      img = original.get();
-      processed = false;
+      if (original) {
+        img = original.get();
+        processed = false;
+      }
     }
-  }
 
-  if (props.filter) {
-    filter = props.filter;
-    if (original) {
-      img = original.get();
-      processed = false;
+    if (props.onCanvasImage) {
+      onCanvasImage = props.onCanvasImage; // store callback
     }
-  }
-
-  if (props.onCanvasImage) {
-    onCanvasImage = props.onCanvasImage; // store callback
-  }
-};
+  };
 
   p5.setup = () => {
     // Temporary default canvas size
@@ -101,7 +134,7 @@ export function sketch(p5) {
       processed = true;
     }
 
-    // Draw the image scaled to canvas size
+    // Draw the image scaled to current canvas size
     p5.image(img, 0, 0, p5.width, p5.height);
 
     if (onCanvasImage && p5.canvas) {

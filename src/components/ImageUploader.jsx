@@ -40,7 +40,10 @@ export default function ImageUploader({ onImageLoad }) {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       className={opened ? "overlay" : "overlay-static"}
-      style={{ width: (opened ? String(canvasSize.width) + "px" : "600px"), height: (opened ? String(canvasSize.height) + "px": "400px" )}}
+      style={{
+  width: opened ? `${canvasSize.width}px` : "600px",
+  height: opened ? `${canvasSize.height}px` : "400px"
+}}
       onClick={() => fileInputRef.current.click()}
     >
       <svg style={{ display: "none" }}>

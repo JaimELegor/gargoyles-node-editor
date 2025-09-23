@@ -1,0 +1,41 @@
+
+.edit-mode {
+  display: flex;
+  flex-direction: column;
+}
+
+.mode,
+.mode-disabled {
+  position: relative;
+  box-sizing: border-box;
+  padding: 10px;
+  cursor: pointer;
+  font-family: "Arial Narrow", Arial, sans-serif;
+  font-stretch: condensed;  
+  font-kerning: normal;  
+  text-rendering: optimizeLegibility;
+  color: black; 
+  filter: blur(1px); 
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  font-size: 28px;
+  background-image: url("/key.png");
+}
+
+.mode-disabled {
+  height: 90px;
+  width: 90px;
+}
+
+.mode {
+  height: 85px;              
+  width: 85px;
+  border-radius: 15px;
+  font-size: 24px;
+  color: #111; 
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+  filter: brightness(95%);
+}
+
+

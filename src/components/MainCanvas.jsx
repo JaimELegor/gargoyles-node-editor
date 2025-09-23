@@ -22,7 +22,6 @@ export default function CanvasMain() {
                               filterFlag={true}
                               onCanvasImage={(canvas) => setMainCanvas(canvas)} 
                               onResize={({ width, height }) => {
-    console.log("Canvas resized:", width, height);
     setCanvasSize({ width, height });
   }}
                             />
