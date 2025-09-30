@@ -11,8 +11,10 @@ import CanvasWEBGL from './components/WEBGLCanvas';
 import TopBar from './components/TopBar';
 import EditMode from './components/EditMode';
 import { ModeProvider } from './contexts/ModeContext';
+import { useState } from 'react';
 
 export default function App() {
+  const [cpuFlag, setCPUFlag] = useState(false);
   return (
     <>
     <ModeProvider>
@@ -20,12 +22,21 @@ export default function App() {
           <NodeProvider>
             <FilterProvider>
               <TopBar />
+              <button onClick={() => setCPUFlag(!cpuFlag)}>toggle gpu</button>
             <div className="main">     
                <Menu />
               <div className="sub-main">
-                <CanvasMain />
+                {
+                  cpuFlag ? 
+                  (
+                    <CanvasMain />
+                  ) :
+                  (
+                    <CanvasWEBGL />
+                  )
+                }
                 <NodeEditor />
-                {/*<CanvasWEBGL />*/}
+                
                 <div className="edit-mode-holder">
                   <EditMode />
                 </div>

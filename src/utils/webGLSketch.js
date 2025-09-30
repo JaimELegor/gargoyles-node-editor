@@ -27,16 +27,29 @@ export function WEBGLSketch(p5) {
     }
   `;
 
+  function getScaledSize(imgWidth, imgHeight, minSize = 500, maxSize = 1000) {
+    const aspect = imgWidth / imgHeight;
+    let w = imgWidth;
+    let h = imgHeight;
+
+    if (w > maxSize) { w = maxSize; h = Math.round(w / aspect); }
+    if (h > maxSize) { h = maxSize; w = Math.round(h * aspect); }
+    if (w < minSize) { w = minSize; h = Math.round(w / aspect); }
+    if (h < minSize) { h = minSize; w = Math.round(h * aspect); }
+
+    return [w, h];
+  }
+
   function getParamValues(name, paramsMap) {
     if (!paramsMap || !paramsMap[name]) return {};
     return paramsMap[name];
   }
 
   function loadShaders(filterDefs) {
+    if (!buffer) return; // ensure buffer is ready
     filterDefs.forEach(({ name, shader }) => {
       if (shader && !shaders[name]) {
-        // shader is the full GLSL fragment code as string (from JSON)
-        shaders[name] = p5.createShader(baseVert, shader);
+        shaders[name] = buffer.createShader(baseVert, shader);
       }
     });
   }
@@ -71,6 +84,18 @@ export function WEBGLSketch(p5) {
         currentSrc = props.imgSrc;
 
         filters = props.filter;
+
+        const [w, h] = getScaledSize(loadedImage.width, loadedImage.height, 400, 900);
+        p5.resizeCanvas(w, h);
+        if (p5.canvas) {
+          p5.canvas.width = w;
+          p5.canvas.height = h;
+          p5.canvas.style.width = `${w}px`;
+          p5.canvas.style.height = `${h}px`;
+        }
+
+        if (props.onResize) props.onResize({ width: w, height: h });
+
         if (filters) loadShaders(filters);
       });
     }
@@ -87,6 +112,7 @@ export function WEBGLSketch(p5) {
     if (props.onCanvasImage) {
       onCanvasImage = props.onCanvasImage;
     }
+
   };
 
   p5.setup = () => {
@@ -104,16 +130,19 @@ export function WEBGLSketch(p5) {
     // apply filters sequentially into buffer
     if (filters && filters.length > 0) {
       filters.forEach(({ name }) => {
-        const params = getParamValues(name, paramsMap);
-        runShaderPass(shaders[name], params, currentTex);
-        currentTex = buffer; // buffer now holds the latest output
+      if (!shaders[name]) {
+        shaders[name] = buffer.createShader(baseVert, filters[name].shader);
+      }
+      const params = getParamValues(name, paramsMap);
+      runShaderPass(shaders[name], params, currentTex);
+      currentTex = buffer;
       });
     }
 
     // draw final image upright from currentTex
     p5.push();
     p5.imageMode(p5.CENTER);
-    p5.scale(1, -1); // flip vertically
+    //p5.scale(1, -1); // flip vertically
     p5.image(currentTex, 0, 0, p5.width, p5.height);
     p5.pop();
 

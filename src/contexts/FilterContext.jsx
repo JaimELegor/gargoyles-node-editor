@@ -29,6 +29,7 @@ export function FilterProvider({ children }) {
       return {
         name,                         // short name for identification
         func: (...args) => filter.processFunc(...args), // processing function
+        shader: filter.shader,
       };
     }).filter(Boolean); // remove any nulls
     setFilterFunctions(updated);

@@ -5,7 +5,7 @@ import { useImage } from "../contexts/ImageContext";
 export default function ImageUploader({ onImageLoad }) {
   const fileInputRef = useRef();
   const [opened, setOpened] = useState(false);
-  const { canvasSize } = useImage();
+  const { canvasSize, imgDataURL } = useImage();
   const handleFiles = (files) => {
     const file = files[0];
     if (file && file.type.startsWith("image/")) {
@@ -39,10 +39,10 @@ export default function ImageUploader({ onImageLoad }) {
     <div
       onDrop={handleDrop}
       onDragOver={handleDragOver}
-      className={opened ? "overlay" : "overlay-static"}
+      className={ imgDataURL ? "overlay" : "overlay-static"}
       style={{
-  width: opened ? `${canvasSize.width}px` : "600px",
-  height: opened ? `${canvasSize.height}px` : "400px"
+  width: imgDataURL ? `${canvasSize.width}px` : "600px",
+  height: imgDataURL ? `${canvasSize.height}px` : "400px"
 }}
       onClick={() => fileInputRef.current.click()}
     >

@@ -22,8 +22,8 @@ export default function CanvasMain() {
                               filterFlag={true}
                               onCanvasImage={(canvas) => setMainCanvas(canvas)} 
                               onResize={({ width, height }) => {
-    setCanvasSize({ width, height });
-  }}
+                                    setCanvasSize({ width, height });
+                                  }}
                             />
                           </>
                         )}

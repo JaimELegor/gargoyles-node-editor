@@ -1,65 +1,56 @@
 export let savedP5Instance = null;
+import { filterManager } from "./FilterManager";
+
 
 export function sketch(p5) {
-  let img;
-  let original;
-  let processed = false;
   let currentSrc = null;
-  let filter = null;
-  let filterFlag = false;
-  let paramsMap;
+  let filters = [];
+  let paramsMap = {};
   let onCanvasImage;
+
   savedP5Instance = p5;
 
-  function getParamValues(name, paramsMap) {
-    if (!paramsMap || !paramsMap[name]) return [];
-    return Object.values(paramsMap[name]);
-  }
+  function getScaledSize(imgWidth, imgHeight, minSize = 500, maxSize = 1000) {
+    const aspect = imgWidth / imgHeight;
+    let w = imgWidth;
+    let h = imgHeight;
 
-function getScaledSize(imgWidth, imgHeight, minSize = 500, maxSize = 1000) {
-  const aspect = imgWidth / imgHeight;
+    if (w > maxSize) {
+      w = maxSize;
+      h = Math.round(w / aspect);
+    }
+    if (h > maxSize) {
+      h = maxSize;
+      w = Math.round(h * aspect);
+    }
 
-  // Start by limiting the larger dimension to maxSize
-  let w = imgWidth;
-  let h = imgHeight;
+    if (w < minSize) {
+      w = minSize;
+      h = Math.round(w / aspect);
+    }
+    if (h < minSize) {
+      h = minSize;
+      w = Math.round(h * aspect);
+    }
 
-  if (w > maxSize) {
-    w = maxSize;
-    h = Math.round(w / aspect);
+    return [w, h];
   }
-  if (h > maxSize) {
-    h = maxSize;
-    w = Math.round(h * aspect);
-  }
-
-  // Then enforce minSize, scaling up if necessary
-  if (w < minSize) {
-    w = minSize;
-    h = Math.round(w / aspect);
-  }
-  if (h < minSize) {
-    h = minSize;
-    w = Math.round(h * aspect);
-  }
-
-  return [w, h];
-}
 
   p5.updateWithProps = (props) => {
     if (props.imgSrc && props.imgSrc !== currentSrc) {
       p5.loadImage(props.imgSrc, (loadedImage) => {
-        original = loadedImage;
-        img = original.get();
-        processed = false;
+        filterManager.setOriginal(loadedImage);
         currentSrc = props.imgSrc;
 
-        // compute scaled size with both min and max
-        const [w, h] = getScaledSize(original.width, original.height, 400, 900);
-
-        // Resize the p5 canvas to the exact pixel size
+        // scale canvas
+        const [w, h] = getScaledSize(
+          loadedImage.width,
+          loadedImage.height,
+          400,
+          900
+        );
         p5.resizeCanvas(w, h);
 
-        // Make sure the DOM canvas element also uses the same pixel & style size
         if (p5.canvas) {
           p5.canvas.width = w;
           p5.canvas.height = h;
@@ -67,75 +58,51 @@ function getScaledSize(imgWidth, imgHeight, minSize = 500, maxSize = 1000) {
           p5.canvas.style.height = `${h}px`;
         }
 
-        // Notify parent
         if (props.onResize) props.onResize({ width: w, height: h });
 
-        filter = props.filter;
-        filterFlag = true;
+        // recompute pipeline with current filters
+        if (filters.length > 0) {
+          filterManager.applyAll(filters, paramsMap);
+        }
       });
     }
 
     if (props.paramsMap) {
       paramsMap = props.paramsMap;
-      if (original) {
-        img = original.get();
-        processed = false;
+      if (filterManager.original && filters.length > 0) {
+        filterManager.applyAll(filters, paramsMap);
       }
     }
 
     if (props.filter) {
-      filter = props.filter;
-      if (original) {
-        img = original.get();
-        processed = false;
+      filters = props.filter;
+      if (filterManager.original) {
+        filterManager.applyAll(filters, paramsMap);
       }
     }
 
     if (props.onCanvasImage) {
-      onCanvasImage = props.onCanvasImage; // store callback
+      onCanvasImage = props.onCanvasImage;
     }
   };
 
   p5.setup = () => {
-    // Temporary default canvas size
     p5.createCanvas(100, 100);
   };
 
   p5.draw = () => {
     p5.background(57, 255, 20);
-    if (!img) return;
 
-    const index = (x, y) => {
-      const i = 4 * (x + y * img.width);
-      const r = img.pixels[i];
-      const g = img.pixels[i + 1];
-      const b = img.pixels[i + 2];
-      const a = img.pixels[i + 3];
-      return [r, g, b, a];
-    };
+    if (!filterManager.mainFiltered) return;
 
-    const process = (func, params) => {
-      for (let y = 0; y < img.height; y++) {
-        for (let x = 0; x < img.width; x++) {
-          const [r, g, b, a] = index(x, y);
-          func(img, r, g, b, a, x, y, ...params);
-        }
-      }
-    };
-
-    if (filterFlag && filter && filter.length > 0 && !processed) {
-      img.loadPixels();
-
-      filter.forEach(({ name, func }) => {
-        process(func, getParamValues(name, paramsMap));
-      });
-
-      img.updatePixels();
-      processed = true;
-    }
-
-    // Draw the image scaled to current canvas size
-    p5.image(img, 0, 0, p5.width, p5.height);
+    // draw the precomputed result
+    p5.image(
+      filterManager.mainFiltered,
+      0,
+      0,
+      p5.width,
+      p5.height
+    );
 
     if (onCanvasImage && p5.canvas) {
       onCanvasImage(p5.canvas);
