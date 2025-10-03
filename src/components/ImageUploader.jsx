@@ -1,6 +1,7 @@
 // src/components/ImageUploader.jsx
 import React, { useState, useRef } from "react";
 import { useImage } from "../contexts/ImageContext";
+import "../styles/ImageUploader.css"
 
 export default function ImageUploader({ onImageLoad }) {
   const fileInputRef = useRef();
@@ -51,7 +52,7 @@ export default function ImageUploader({ onImageLoad }) {
           <feGaussianBlur stdDeviation="1.75" />
         </filter>
       </svg>
-      <p style={{ filter: "url(#text-blur)", color: "white", textAlign: "center" }}>CHOOSE AN IMAGE</p>
+      <p className="overlay-uploader">CHOOSE AN IMAGE</p>
 
       <input
         ref={fileInputRef}
