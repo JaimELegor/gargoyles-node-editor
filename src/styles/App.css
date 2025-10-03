@@ -47,7 +47,7 @@ body {
   background-size: cover;       
   background-position: center; 
   background-repeat: no-repeat;
-  background-image: url("toggle-on.png");
+  background-image: url("/toggle-on.png");
   cursor: pointer;
 }
 
@@ -58,7 +58,7 @@ body {
   background-size: cover;       
   background-position: center; 
   background-repeat: no-repeat;
-  background-image: url("toggle-off.png");
+  background-image: url("/toggle-off.png");
   cursor: pointer;
 }
 
