@@ -10,11 +10,11 @@ import Marquee from './components/MarqueeMotd';
 import CanvasWEBGL from './components/WEBGLCanvas';
 import TopBar from './components/TopBar';
 import EditMode from './components/EditMode';
+import CPUFlagButton from './components/CPUFlagButton';
 import { ModeProvider } from './contexts/ModeContext';
 import { useState } from 'react';
 
 export default function App() {
-  const [cpuFlag, setCPUFlag] = useState(false);
   return (
     <>
     <ModeProvider>
@@ -22,19 +22,21 @@ export default function App() {
           <NodeProvider>
             <FilterProvider>
               <TopBar />
-              <button onClick={() => setCPUFlag(!cpuFlag)}>toggle gpu</button>
+              
             <div className="main">     
                <Menu />
+               <CPUFlagButton />
               <div className="sub-main">
-                {
-                  cpuFlag ? 
-                  (
-                    <CanvasMain />
-                  ) :
-                  (
-                    <CanvasWEBGL />
-                  )
+                {//
+                 // cpuFlag ? 
+                 // (
+                 //   <CanvasMain />
+                 // ) :
+                 // (
+                 //   <CanvasWEBGL />
+                 // )
                 }
+                <CanvasMain />
                 <NodeEditor />
                 
                 <div className="edit-mode-holder">
@@ -42,6 +44,7 @@ export default function App() {
                 </div>
               </div>
             </div>
+            
             <CanvasPreview />
             </FilterProvider>
           </NodeProvider>

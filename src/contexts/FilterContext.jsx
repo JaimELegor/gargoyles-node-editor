@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { configFilter } from "../utils/configFilter";
 import { useNode } from "./NodeContext";
 import { useImage } from "./ImageContext";
+import { disposeBackends } from "../utils/backends";
 
 const FilterContext = createContext();
 
@@ -45,10 +46,11 @@ export function FilterProvider({ children }) {
       ).params);
       setFilterSingle(() => configFilter.find(
         (filter) => selectedNode === filter.name.split("/")[filter.name.split("/").length - 1]
-      ).processFunc);
+      ));
     }
 
     if (!selectedNode && lastSelected && previewCanvas) {
+      console.log("preview canvas saved");
       previewCanvas.toBlob((blob) => {
         if (!blob) return;
 

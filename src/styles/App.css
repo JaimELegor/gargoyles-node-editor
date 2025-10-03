@@ -40,6 +40,28 @@ body {
 
 }
 
+.toggle-on {
+  margin-top: 50px;
+  width: 121px;
+  height: 160px;
+  background-size: cover;       
+  background-position: center; 
+  background-repeat: no-repeat;
+  background-image: url("toggle-on.png");
+  cursor: pointer;
+}
+
+.toggle-off {
+  margin-top: 50px;
+  width: 121px;
+  height: 160px;
+  background-size: cover;       
+  background-position: center; 
+  background-repeat: no-repeat;
+  background-image: url("toggle-off.png");
+  cursor: pointer;
+}
+
 
 @font-face {
   font-family: "MS Sans Serif";

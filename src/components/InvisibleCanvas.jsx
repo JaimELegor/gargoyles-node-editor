@@ -4,11 +4,13 @@ import { monitorSketch } from "../utils/monitorSketch";
 import { useImage } from "../contexts/ImageContext";
 import { useFilter } from "../contexts/FilterContext";
 import { useNode } from "../contexts/NodeContext";
+import { useMode } from "../contexts/ModeContext";
 
 export default function CanvasPreview() {
   const { imgDataURL, setPreviewCanvas, setMonitorCanvas } = useImage();
   const { filterValues, filterSingle } = useFilter();
   const { selectedNode } = useNode();
+  const { cpuFlag } = useMode();
 
   if (!imgDataURL) return null;
 
@@ -22,6 +24,7 @@ export default function CanvasPreview() {
                     imgSrc={imgDataURL} 
                     onCanvasImage={(canvas) => setMonitorCanvas(canvas)} 
                     sketch={monitorSketch} 
+                    cpuFlag = {cpuFlag}
                 />
 
                 <ReactP5Wrapper
@@ -30,8 +33,9 @@ export default function CanvasPreview() {
                     paramsMap={filterValues} 
                     filter={filterSingle} 
                     imgSrc={imgDataURL} 
-                    onCanvasImage={(canvas) => setPreviewCanvas(canvas)} 
+                    onCanvasImage={(canvas) => setPreviewCanvas(canvas)} //here's where it gets stored
                     sketch={invisibleSketch} 
+                    cpuFlag = {cpuFlag}
                 />
              
             </div>       

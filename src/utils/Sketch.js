@@ -1,5 +1,7 @@
 export let savedP5Instance = null;
-import { filterManager } from "./FilterManager";
+import { CPUBackend } from "./CPUBackend";
+import { FilterManager } from "./FilterManager";
+import { GPUBackend } from "./GPUBackend";
 
 
 export function sketch(p5) {
@@ -7,9 +9,12 @@ export function sketch(p5) {
   let filters = [];
   let paramsMap = {};
   let onCanvasImage;
-
+  let cpuFlag;
   savedP5Instance = p5;
-
+  const gpuBackend = new GPUBackend(p5);
+  const cpuBackend = new CPUBackend();
+  const filterManager = new FilterManager();
+  let backendGPU = false;
   function getScaledSize(imgWidth, imgHeight, minSize = 500, maxSize = 1000) {
     const aspect = imgWidth / imgHeight;
     let w = imgWidth;
@@ -84,10 +89,27 @@ export function sketch(p5) {
     if (props.onCanvasImage) {
       onCanvasImage = props.onCanvasImage;
     }
+
+    if (props.cpuFlag !== cpuFlag) {
+      cpuFlag = props.cpuFlag;
+
+      if (cpuFlag === false) {
+        filterManager.setBackend(gpuBackend);
+      } else {
+        filterManager.setBackend(cpuBackend);
+      }
+
+      if (filterManager.original) {
+        filterManager.mainFiltered = filterManager.original.get();
+        if (filters.length > 0) {
+          filterManager.applyAll(filters, paramsMap);
+        }
+      }
+    }
   };
 
   p5.setup = () => {
-    p5.createCanvas(100, 100);
+    p5.createCanvas(100, 100, p5.WEBGL); 
   };
 
   p5.draw = () => {
@@ -95,14 +117,12 @@ export function sketch(p5) {
 
     if (!filterManager.mainFiltered) return;
 
-    // draw the precomputed result
-    p5.image(
-      filterManager.mainFiltered,
-      0,
-      0,
-      p5.width,
-      p5.height
-    );
+  
+    p5.push();
+    p5.imageMode(p5.CENTER);
+    p5.image(filterManager.mainFiltered, 0, 0, p5.width, p5.height);
+    p5.pop();
+    
 
     if (onCanvasImage && p5.canvas) {
       onCanvasImage(p5.canvas);

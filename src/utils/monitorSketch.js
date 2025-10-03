@@ -1,4 +1,6 @@
-import { filterManager } from "./FilterManager";
+import { CPUBackend } from "./CPUBackend";
+import { FilterManager } from "./FilterManager";
+import { GPUBackend } from "./GPUBackend";
 
 export function monitorSketch(p5) {
   let monitor;
@@ -8,18 +10,17 @@ export function monitorSketch(p5) {
   let filters = [];
   let paramsMap = {};
   let name;
-
-  function getParamValues(name, paramsMap) {
-    if (!paramsMap || !paramsMap[name]) return [];
-    return Object.values(paramsMap[name]);
-  }
+  let cpuFlag;
+  const gpuBackend = new GPUBackend(p5);
+  const cpuBackend = new CPUBackend();
+  const filterManager = new FilterManager();
 
   p5.updateWithProps = (props) => {
     if (props.imgSrc && props.imgSrc !== currentSrc) {
       p5.loadImage(props.imgSrc, (loadedImage) => {
         filterManager.setOriginal(loadedImage);
         currentSrc = props.imgSrc;
-
+        filterManager.singleFiltered = loadedImage.get();
         if (filters.length > 0) {
           filterManager.applySingle(filters, name, paramsMap);
         }
@@ -50,6 +51,23 @@ export function monitorSketch(p5) {
         filterManager.applySingle(filters, name, paramsMap);
       }
     }
+
+    if (props.cpuFlag !== cpuFlag) {
+      cpuFlag = props.cpuFlag;
+
+      if (cpuFlag === false) {
+        filterManager.setBackend(gpuBackend);
+      } else {
+        filterManager.setBackend(cpuBackend);
+      }
+
+      if (filterManager.original) {
+        filterManager.singleFiltered = filterManager.original.get();
+        if (filters.length > 0) {
+          filterManager.applySingle(filters, name, paramsMap);
+        }
+      }
+    }
   };
 
   p5.setup = () => {
@@ -67,9 +85,13 @@ export function monitorSketch(p5) {
     p5.image(img, 0, 0, 256, 256);
 
     // draw filtered preview inside monitor
-    if (filterManager.singleFiltered) {
-      p5.image(filterManager.singleFiltered, 53, 52, 62, 50);
-    }
+    if (!filterManager.singleFiltered) return;
+    p5.push();
+    //p5.imageMode(p5.CENTER);
+    p5.image(filterManager.singleFiltered, 52, 60, 62, 50);
+    // p5.image(filterManager.mainFiltered, 0, 0, p5.width, p5.height);
+    p5.pop();
+
 
     if (onCanvasImage && p5.canvas) {
       onCanvasImage(p5.canvas);
