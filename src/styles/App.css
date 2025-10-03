@@ -65,12 +65,12 @@ body {
 
 @font-face {
   font-family: "MS Sans Serif";
-  src: url("pixel-sans-serif.woff") format("woff"); 
+  src: url("/pixel-sans-serif.woff") format("woff"); 
 }
 
 @font-face {
   font-family: "MS Sans Serif-normal";
-  src: url("ms-sans-serif-2.otf.woff2") format("woff"); 
+  src: url("/ms-sans-serif-2.otf.woff2") format("woff"); 
 }
 
 
