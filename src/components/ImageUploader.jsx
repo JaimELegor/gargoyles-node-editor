@@ -47,11 +47,6 @@ export default function ImageUploader({ onImageLoad }) {
 }}
       onClick={() => fileInputRef.current.click()}
     >
-      <svg style={{ display: "none" }}>
-        <filter id="text-blur">
-          <feGaussianBlur stdDeviation="1.75" />
-        </filter>
-      </svg>
       <p className="overlay-uploader">CHOOSE AN IMAGE</p>
 
       <input

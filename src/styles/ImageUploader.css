@@ -1,5 +1,5 @@
 .overlay-uploader {
-    filter: url(#text-blur);
+    filter: blur(1.75px);
     color: "white";
     text-align: "center";
 }
