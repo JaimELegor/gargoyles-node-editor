@@ -15,7 +15,7 @@ export function FilterProvider({ children }) {
   const { selectedNode, nodePreviews, 
           setNodePreviews, lastSelected, 
           setLastSelected, edges, setEdges,
-          order, setOrder
+          order, setOrder, singleSelected, setSingleSelected
          } = useNode();
 
   const { previewCanvas } = useImage();
@@ -34,8 +34,15 @@ export function FilterProvider({ children }) {
       };
     }).filter(Boolean); // remove any nulls
     setFilterFunctions(updated);
-    const previews = order.map((name) => { return { name, blob: null }; });
-    setNodePreviews(previews);
+    setNodePreviews((prev) => {
+      const map = new Map(prev.map(p => [p.name, p]));
+      return order.map((name) => {
+        if (map.has(name)) {
+          return map.get(name); // keep existing blob/url
+        }
+        return { name, blob: null }; // new node
+      });
+    });
   }, [order]);
 
   useEffect(() => {
@@ -50,7 +57,6 @@ export function FilterProvider({ children }) {
     }
 
     if (!selectedNode && lastSelected && previewCanvas) {
-      console.log("preview canvas saved");
       previewCanvas.toBlob((blob) => {
         if (!blob) return;
 
@@ -68,24 +74,52 @@ export function FilterProvider({ children }) {
 
 
   }, [selectedNode, lastSelected]);
+//
+  //useEffect(() => {
+  //  if (!singleSelected || !previewCanvas) return;
+//
+  //  
+//
+  //  previewCanvas.toBlob((blob) => {
+  //    if (!blob) return;
+//
+//
+  //    setNodePreviews((prev) => {
+  //      let exists = false;
+  //      const updated = prev.map((p) => {
+  //        if (p.name === singleSelected) {
+  //          exists = true;
+  //          if (p.url) URL.revokeObjectURL(p.url);
+  //          return { ...p, blob, url: URL.createObjectURL(blob) };
+  //        }
+  //        return p;
+  //      });
+  //      if (!exists) {
+  //        // Add singleNode if not already in previews
+  //        updated.push({ name: singleSelected, blob, url: URL.createObjectURL(blob) });
+  //      }
+  //      return updated;
+  //    });
+  //  });
+  //}, [singleSelected, previewCanvas]);
 
-useEffect(() => {
-  const newFilterValues = {};
-  order.forEach(name => {
-    const filter = configFilter.find(f => f.name.split("/").slice(-1)[0] === name);
-    if (filter) {
-      newFilterValues[name] = {};
-      Object.entries(filter.params).forEach(([paramName, param]) => {
-        // keep imported value if available, otherwise fall back to default
-        newFilterValues[name][paramName] =
-          (filterValues?.[name]?.[paramName] !== undefined)
-            ? filterValues[name][paramName]
-            : param.value;
-      });
-    }
-  });
-  setFilterValues(newFilterValues);
-}, [order]);
+  useEffect(() => {
+    const newFilterValues = {};
+    order.forEach(name => {
+      const filter = configFilter.find(f => f.name.split("/").slice(-1)[0] === name);
+      if (filter) {
+        newFilterValues[name] = {};
+        Object.entries(filter.params).forEach(([paramName, param]) => {
+          // keep imported value if available, otherwise fall back to default
+          newFilterValues[name][paramName] =
+            (filterValues?.[name]?.[paramName] !== undefined)
+              ? filterValues[name][paramName]
+              : param.value;
+        });
+      }
+    });
+    setFilterValues(newFilterValues);
+  }, [order]);
 
 
   return (

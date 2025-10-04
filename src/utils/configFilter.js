@@ -239,10 +239,11 @@ void main() {
   icon: "⭕",
   params: {
     cellSize: { value: 6, min: 2, max: 20, step: 1 },
-    invert: { value: 0, min: 0, max: 1, step: 1 }
+    invert: { value: 0, min: 0, max: 1, step: 1 },
+    blend: { value: 0.5, min: 0, max: 1, step: 0.05 } // 0 = only pattern, 1 = fully original color
   },
   processFunc: (img, r, g, b, a, x, y, ...params) => {
-    const [cellSize, invert] = params;
+    const [cellSize, invert, blend] = params;
     const index = (x, y) => 4 * (x + y * img.width);
 
     const cellX = Math.floor(x / cellSize) * cellSize;
@@ -260,24 +261,27 @@ void main() {
         count++;
       }
     }
+
     const avg = sum / count;
     const radius = (1 - avg / 255) * (cellSize / 2);
     const dx = (x - (cellX + cellSize / 2));
     const dy = (y - (cellY + cellSize / 2));
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    let color = invert ? 255 : 0;
-    if (dist < radius) color = invert ? 0 : 255;
+    let patternColor = invert ? 255 : 0;
+    if (dist < radius) patternColor = invert ? 0 : 255;
 
-    img.pixels[index(x, y)] = color;
-    img.pixels[index(x, y) + 1] = color;
-    img.pixels[index(x, y) + 2] = color;
+    // Blend original color with pattern
+    img.pixels[index(x, y)]     = r * blend + patternColor * (1 - blend);
+    img.pixels[index(x, y) + 1] = g * blend + patternColor * (1 - blend);
+    img.pixels[index(x, y) + 2] = b * blend + patternColor * (1 - blend);
   },
   shader: `precision mediump float;
 uniform sampler2D tex;
 uniform vec2 resolution;
 uniform float cellSize;
 uniform float invert;
+uniform float blend;
 varying vec2 vTexCoord;
 
 void main() {
@@ -289,7 +293,9 @@ void main() {
   float dist = length(uv - cellUV);
   float c = step(dist, radius);
   c = invert > 0.5 ? 1.0 - c : c;
-  gl_FragColor = vec4(vec3(c), 1.0);
+
+  vec3 finalColor = color * blend + vec3(c) * (1.0 - blend);
+  gl_FragColor = vec4(finalColor, 1.0);
 }`
 },
 {
@@ -324,6 +330,133 @@ void main() {
   float gray = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
   vec3 c = mix(shadowColor, highlightColor, gray);
   gl_FragColor = vec4(c, color.a);
+}`
+},
+{
+  name: "BLUR/Gaussian",
+  icon: "🌫️",
+  params: {
+    radius: { value: 2, min: 0, max: 10, step: 0.5 }
+  },
+  processFunc: (img, r, g, b, a, x, y, value) => {
+    const index = (x, y) => 4 * (x + y * img.width);
+    const w = img.width;
+    const h = img.height;
+    const rad = Math.max(1, Math.round(value));
+    let rSum = 0, gSum = 0, bSum = 0, aSum = 0, count = 0;
+
+    for (let oy = -rad; oy <= rad; oy++) {
+      for (let ox = -rad; ox <= rad; ox++) {
+        const nx = x + ox;
+        const ny = y + oy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const i = index(nx, ny);
+        rSum += img.pixels[i];
+        gSum += img.pixels[i + 1];
+        bSum += img.pixels[i + 2];
+        aSum += img.pixels[i + 3];
+        count++;
+      }
+    }
+
+    img.pixels[index(x, y)]     = rSum / count;
+    img.pixels[index(x, y) + 1] = gSum / count;
+    img.pixels[index(x, y) + 2] = bSum / count;
+    img.pixels[index(x, y) + 3] = aSum / count;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float radius;
+varying vec2 vTexCoord;
+
+void main() {
+  vec2 texel = 1.0 / resolution;
+  vec3 color = vec3(0.0);
+  float count = 0.0;
+
+  for (float y = -10.0; y <= 10.0; y++) {
+    for (float x = -10.0; x <= 10.0; x++) {
+      if (abs(x) > radius || abs(y) > radius) continue;
+      color += texture2D(tex, vTexCoord + vec2(x, y) * texel).rgb;
+      count += 1.0;
+    }
+  }
+
+  gl_FragColor = vec4(color / count, texture2D(tex, vTexCoord).a);
+}`
+},
+{
+  name: "TEXTURE/Craquelure",
+  icon: "🕸️",
+  params: {
+    intensity: { value: 0.5, min: 0, max: 1, step: 0.05 },
+    scale: { value: 10, min: 2, max: 50, step: 1 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [intensity, scale] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+
+    // Simple procedural craquelure: random cracks based on position
+    const noise = ((x * 12.9898 + y * 78.233) % 1) - 0.5; // pseudo-random [-0.5,0.5]
+    const edge = (Math.sin(x / scale) * Math.cos(y / scale) + noise) * 2;
+
+    const factor = edge > 0.7 ? 1 - intensity : 1;
+    
+    img.pixels[index(x, y)]     = r * factor;
+    img.pixels[index(x, y) + 1] = g * factor;
+    img.pixels[index(x, y) + 2] = b * factor;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float intensity;
+uniform float scale;
+varying vec2 vTexCoord;
+
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+void main() {
+  vec4 color = texture2D(tex, vTexCoord);
+  vec2 uv = vTexCoord * resolution;
+
+  float noise = rand(uv) - 0.5;
+  float edge = sin(uv.x / scale) * cos(uv.y / scale) * 2.0 + noise;
+  float factor = edge > 0.7 ? 1.0 - intensity : 1.0;
+
+  gl_FragColor = vec4(color.rgb * factor, color.a);
+}`
+},
+{
+  name: "COLOR/Point/Invert",
+  icon: "🔄",
+  params: {
+    strength: { value: 1, min: 0, max: 1, step: 0.05 }
+  },
+  processFunc: (img, r, g, b, a, x, y, strength) => {
+    const i = 4 * (x + y * img.width);
+    const invR = 255 - r;
+    const invG = 255 - g;
+    const invB = 255 - b;
+
+    // Blend between original and inverted color
+    img.pixels[i]     = r * (1 - strength) + invR * strength;
+    img.pixels[i + 1] = g * (1 - strength) + invG * strength;
+    img.pixels[i + 2] = b * (1 - strength) + invB * strength;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float strength;
+varying vec2 vTexCoord;
+
+void main() {
+  vec4 color = texture2D(tex, vTexCoord);
+  vec3 inverted = 1.0 - color.rgb;
+  vec3 blended = mix(color.rgb, inverted, strength);
+  gl_FragColor = vec4(blended, color.a);
 }`
 }
 ];

@@ -80,9 +80,11 @@ export function sketch(p5) {
     }
 
     if (props.filter) {
-      filters = props.filter;
+      // clone to guarantee new reference
+      filters = [...props.filter]; 
       if (filterManager.original) {
-        filterManager.applyAll(filters, paramsMap);
+        // bypass cache to always recompute
+        filterManager.applyAll(filters, paramsMap, { force: true });
       }
     }
 

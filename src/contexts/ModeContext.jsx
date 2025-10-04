@@ -6,7 +6,6 @@ export function ModeProvider({ children }) {
   const [activeMode, setActiveMode] = useState(null);
   const [cpuFlag, setCPUFlag] = useState(true);
   useEffect(() => {
-    console.log("cpu?", cpuFlag);
   }, [cpuFlag]);
   return (
     <ModeContext.Provider value={{ activeMode, setActiveMode, cpuFlag, setCPUFlag }}>

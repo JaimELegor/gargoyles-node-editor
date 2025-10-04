@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const NodeContext = createContext();
 
@@ -6,12 +6,32 @@ export function NodeProvider({ children }) {
   const [nodes, setNodes] = useState([]);
   const [nodePreviews, setNodePreviews] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [singleSelected, setSingleSelected] = useState(null);
   const [lastSelected, setLastSelected] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [edges, setEdges] = useState(new Set());
   const [order, setOrder] = useState([]);
 
-    const topSort = (edges) => {
+  useEffect(() => {
+    // If there are edges, let topSort decide
+    if (edges.size > 0) {
+      const sorted = topSort(edges);
+      if (sorted) {
+        setOrder(sorted);
+        return;
+      }
+    }
+
+    // If no edges, fallback to single-node mode
+    if (selectedNode) {
+     // setSingleSelected(selectedNode);
+      setOrder([selectedNode]);
+    } //else {
+      //setOrder([]);
+      //}
+  }, [edges, selectedNode]);
+
+  const topSort = (edges) => {
       // Parse edges into array of objects
       const edgeArr = Array.from(edges).map(e => JSON.parse(e));
   
@@ -62,19 +82,20 @@ export function NodeProvider({ children }) {
   };
 
   const addEdges = (from, to) => {
-      const staging = edges.add(JSON.stringify({ from: from, to: to }));
-      if (topSort(staging) === null) {
-        staging.delete(JSON.stringify({ from: from, to: to}));
-      }
-      setEdges(staging);
-      setOrder(topSort(edges));
+    const newEdges = new Set(edges);
+    newEdges.add(JSON.stringify({ from, to }));
+    if (topSort(newEdges) === null) {
+      newEdges.delete(JSON.stringify({ from, to }));
+    }
+    setEdges(newEdges);
+
   };
 
   const removeEdge = (edge) => {
     const newEdges = new Set(edges);
     newEdges.delete(edge);
     setEdges(newEdges);
-    setOrder(topSort(edges));
+
   };
 
   return (
@@ -85,7 +106,8 @@ export function NodeProvider({ children }) {
       lastSelected, setLastSelected,
       selectedOptions, setSelectedOptions,
       edges, setEdges, addEdges,
-      removeEdge, order, setOrder
+      removeEdge, order, setOrder,
+      singleSelected, setSingleSelected
     }}>
       {children}
     </NodeContext.Provider>

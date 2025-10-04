@@ -77,7 +77,7 @@ export class GPUBackend {
         let currentTex = img;
         filters.forEach(({ name }) => {
             const params = paramsMap?.[name] || {};
-            const compiled = this.shaders[name];   // ✅ compiled p5.Shader
+            const compiled = this.shaders[name];   // compiled p5.Shader
             this.runShaderPass(this.buffer, compiled, params, currentTex);
             currentTex = this.buffer;
         });
@@ -93,7 +93,7 @@ export class GPUBackend {
 
     // Apply a single filter
     runFilter(img, filter, name, paramsMap) {
-        console.log(filter);
+
         if (!filter) return img;
 
         this.ensureBufferSize(this.p5.width, this.p5.height);

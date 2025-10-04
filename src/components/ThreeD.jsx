@@ -9,7 +9,7 @@ import { useFilter } from '../contexts/FilterContext';
 import '../styles/ThreeD.css';
 
 export default function ThreeScene() {
-  const { selectedNode, setSelectedNode } = useNode();
+  const { selectedNode, setSelectedNode, setLastSelected } = useNode();
   const { monitorCanvas } = useImage();
   const { filterValues, sliderParams, setFilterValues } = useFilter();
   const mountRef = useRef(null);
@@ -165,7 +165,7 @@ export default function ThreeScene() {
           }}
         />
       ))}
-      <button onClick={() => setSelectedNode(null)}>Apply</button>
+      <button onClick={() => { setLastSelected(selectedNode); setSelectedNode(null); }}>Apply</button>
     </div>
   );
 }

@@ -51,11 +51,12 @@ makeKeyForSingle(filterName, paramsMap) {
   }
 
   // ---------- main APIs ----------
-  applyAll(filters, paramsMap) {
+  applyAll(filters, paramsMap, { force = false } = {}) {
     if (!this.original) return null;
 
     const key = this.makeKeyForPipeline(filters, paramsMap);
-    if (this.cache.has(key)) {
+
+    if (!force && this.cache.has(key)) {
       this.mainFiltered = this.cloneImage(this.cache.get(key));
       return this.mainFiltered;
     }
