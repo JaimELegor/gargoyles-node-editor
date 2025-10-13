@@ -30,7 +30,6 @@ export class CPUBackend {
     return working;
   }
 
-  // private pixel processor
   process(img, func, params) {
     for (let y = 0; y < img.height; y++) {
       for (let x = 0; x < img.width; x++) {

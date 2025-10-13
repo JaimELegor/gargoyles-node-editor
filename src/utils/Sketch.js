@@ -115,7 +115,7 @@ export function sketch(p5) {
   };
 
   p5.draw = () => {
-    p5.background(57, 255, 20);
+    p5.background(0, 0, 0, 0);
 
     if (!filterManager.mainFiltered) return;
 

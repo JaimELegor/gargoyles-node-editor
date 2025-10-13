@@ -1,48 +1,67 @@
+@import url('theme.css');
+
 .window {
-  width: 310px;
-  height: 700px;
-  background: white;
-  border-top: 2px solid #fff;    /* light edge */
-  border-left: 2px solid #fff;
-  border-right: 2px solid #666;  /* dark edge */
-  border-bottom: 2px solid #666;
-  box-shadow: inset -1px -1px 0 #999, inset 1px 1px 0 #ccc;
-  margin: 20px;
-  margin-right: 100px;
+  width: var(--window-width);
+  height: var(--window-height);
+  background: var(--window-bg);
+  border-top: var(--window-border-top);
+  border-left: var(--window-border-left);
+  border-right: var(--window-border-right);
+  border-bottom: var(--window-border-bottom);
+  box-shadow: var(--window-box-shadow);
+  border-radius: var(--window-radius);
+  margin: var(--window-margin);
+  margin-right: var(--window-margin-right);
 }
+
 .title-bar {
-  display: flex;
+  display: var(--title-bar-display);
   justify-content: space-between;
   align-items: center;
-  background: #000082;
-  color: white;
-  padding: 4px 8px;
-  font-weight: bold;
-  font-size: 14px;
-  font-family: "MS Sans Serif", "Tahoma", sans-serif;
+  background: var(--title-bar-bg);
+  color: var(--title-bar-color);
+  padding: var(--title-bar-padding);
+  font-weight: var(--title-bar-font-weight);
+  font-size: var(--title-bar-font-size);
+  font-family: var(--font-ui);
+  border-radius: var(--window-radius) var(--window-radius) 0 0;
   
-  /* Kill smoothing for that sharp pixel look */
-  image-rendering: pixelated;
-  -webkit-font-smoothing: none;
-  -moz-osx-font-smoothing: grayscale;
-  font-smooth: never;
+  /* Add border-bottom support */
+  border-bottom: var(--title-bar-border-bottom, none);
+  
+  /* Pixel perfect rendering for neon mode */
+  image-rendering: var(--title-bar-image-rendering);
+  -webkit-font-smoothing: var(--title-bar-font-smoothing);
+  -moz-osx-font-smoothing: var(--title-bar-font-smoothing);
+
 }
 
 .close-btn {
-  background: transparent;
+  background: var(--close-btn-bg);
   border: none;
-  color: white;
-  font-size: 16px;
+  color: var(--close-btn-color);
+  font-size: var(--close-btn-font-size);
   cursor: pointer;
   line-height: 1;
+  border-radius: 4px;
+  padding: 4px 8px;
+  transition: background-color 0.15s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255,255,255,0.2);
+  background: var(--close-btn-hover-bg);
 }
 
 .window-body {
-  padding: 10px;
-  font-size: 14px;
-  padding-right: 17px;
+  padding: var(--window-body-padding);
+  font-size: var(--window-body-font-size);
+  padding-right: var(--window-body-padding-right);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+/* Dark mode specific adjustments */
+html[data-theme="dark"] .window-body {
+  /* Add extra top padding when title bar is hidden */
+  padding-top: calc(var(--window-body-padding) + 8px);
 }

@@ -21,25 +21,23 @@ export default function ThreeScene() {
     const width = mountRef.current.clientHeight;
     const height = mountRef.current.clientHeight;
 
-    // Scene
+  
     const scene = new THREE.Scene();
 
-    // Texture
     const textureLoader = new TextureLoader();
     textureLoader.load('clouds.jpg', (texture) => {
       scene.background = texture;
     });
 
-    // Camera
+  
     const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 1000);
     camera.position.z = 1;
 
-    // Renderer
+  
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
     mountRef.current.appendChild(renderer.domElement);
 
-    // Model & Texture
     let model;
     let texture;
     const loader = new GLTFLoader();
@@ -76,7 +74,7 @@ export default function ThreeScene() {
     };
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Animation loop
+
     let targetX = 0, targetY = 0;
     let animationFrameId;
     const animate = () => {
@@ -100,7 +98,6 @@ export default function ThreeScene() {
     };
     animate();
 
-    // Handle resize
     const handleResize = () => {
       if (!mountRef.current) return;
       const width = mountRef.current.clientHeight;
@@ -111,15 +108,12 @@ export default function ThreeScene() {
     };
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
 
-      // Stop animation
       cancelAnimationFrame(animationFrameId);
 
-      // Dispose model and its resources
       if (model) {
         model.traverse((child) => {
           if (child.isMesh) {
@@ -132,10 +126,8 @@ export default function ThreeScene() {
         model = null;
       }
 
-      // Dispose texture
       if (texture) texture.dispose();
 
-      // Dispose renderer and remove canvas
       renderer.dispose();
       if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
         mountRef.current.removeChild(renderer.domElement);

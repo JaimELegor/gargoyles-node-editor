@@ -1,42 +1,92 @@
+@import url('theme.css');
+
 .model {
-  width: 30vh;
+  width: var(--model-width);
   display: flex;
   flex-direction: column;
   align-items: center;
-  
 }
 
 .model input[type="range"] {
-  -webkit-appearance: none; /* remove default look in WebKit browsers */
+  -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  background: transparent; /* so only our custom track shows */
+  background: transparent;
+  cursor: pointer;
 }
 
-/* Track */
+/* Track (WebKit) */
 .model input[type="range"]::-webkit-slider-runnable-track {
-  height: 4px;
-  border-top: 2px dashed #333;
-  background: transparent;
-}
-.model input[type="range"]::-moz-range-track {
-  height: 4px;
-  border-top: 2px dashed #333;
-  background: transparent;
+  height: var(--slider-track-height);
+  border-top: var(--slider-track-border);
+  background: var(--slider-track-bg);
+  border-radius: var(--radius);
 }
 
-/* Thumb (handle) */
+/* Track (Firefox) */
+.model input[type="range"]::-moz-range-track {
+  height: var(--slider-track-height);
+  border-top: var(--slider-track-border);
+  background: var(--slider-track-bg);
+  border-radius: var(--radius);
+}
+
+/* Thumb (WebKit) */
 .model input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 16px;
-  width: 16px;
-  background: #000000; 
+  height: var(--slider-thumb-size);
+  width: var(--slider-thumb-size);
+  background: var(--slider-thumb-bg);
+  border: var(--slider-thumb-border);
+  border-radius: var(--slider-thumb-radius);
   cursor: pointer;
-  margin-top: -9px; 
+  margin-top: var(--slider-thumb-margin);
+  transition: all 0.15s ease;
 }
+
+/* Thumb (Firefox) */
 .model input[type="range"]::-moz-range-thumb {
-  height: 16px;
-  width: 16px;
-  background: #000000;
+  height: var(--slider-thumb-size);
+  width: var(--slider-thumb-size);
+  background: var(--slider-thumb-bg);
+  border: var(--slider-thumb-border);
+  border-radius: var(--slider-thumb-radius);
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Hover states */
+.model input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.model input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+/* Active states */
+.model input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+}
+
+.model input[type="range"]::-moz-range-thumb:active {
+  transform: scale(0.95);
+}
+
+/* Light theme: glow effect on thumb */
+html[data-theme="light"] .model input[type="range"]::-webkit-slider-thumb {
+  box-shadow: 0 0 8px rgba(25, 118, 210, 0.6);
+}
+
+html[data-theme="light"] .model input[type="range"]::-moz-range-thumb {
+  box-shadow: 0 0 8px rgba(25, 118, 210, 0.6);
+}
+
+/* Dark theme: accent glow on hover */
+html[data-theme="dark"] .model input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 6px var(--accent);
+}
+
+html[data-theme="dark"] .model input[type="range"]::-moz-range-thumb:hover {
+  box-shadow: 0 0 6px var(--accent);
 }

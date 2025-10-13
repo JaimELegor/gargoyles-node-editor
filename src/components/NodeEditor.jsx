@@ -200,14 +200,44 @@ const handleMouseDown = (e, id) => {
                 </div>
               );
             })}
-
-            {/* Edges */}
             <svg ref={svgRef} id="edges">
+              {/* Blur filter for neon mode */}
               <filter id="blurFilter" x="-20%" y="-20%" width="140%" height="140%">
                 <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
               </filter>
 
-            {Array.from(edges).map((edge, i) => {
+              {/* Text blur filter */}
+              <filter id="text-blur">
+                <feGaussianBlur stdDeviation="1.75" />
+              </filter>
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="10"
+                  refX="9"
+                  refY="3"
+                  orient="auto"
+                  markerUnits="strokeWidth"
+                >
+                  <path d="M0,0 L0,6 L9,3 z" fill="#00ff88" />
+                </marker>
+                
+                {/* Arrow marker for dark theme */}
+                <marker
+                  id="arrowhead-dark"
+                  markerWidth="8"
+                  markerHeight="8"
+                  refX="7"
+                  refY="2.5"
+                  orient="auto"
+                  markerUnits="strokeWidth"
+                >
+                  <path d="M0,0 L0,5 L7,2.5 z" fill="#4a4a4a" />
+                </marker>
+              </defs>
+
+              {Array.from(edges).map((edge, i) => {
               const parsed = JSON.parse(edge);
               const from = getNodeById(parsed.from);
               const to = getNodeById(parsed.to);
@@ -243,7 +273,9 @@ const handleMouseDown = (e, id) => {
                   strokeDasharray="10"
                 />
               )}
-            </svg>
+
+
+          </svg>
           </div>
         </div>
       )}

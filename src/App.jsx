@@ -14,9 +14,12 @@ import CPUFlagButton from './components/CPUFlagButton';
 import { ModeProvider } from './contexts/ModeContext';
 import { useState } from 'react';
 
+import { ThemeProvider } from './contexts/ThemeContext';
+
 export default function App() {
   return (
     <>
+    <ThemeProvider>
     <ModeProvider>
       <ImageProvider>
           <NodeProvider>
@@ -27,18 +30,8 @@ export default function App() {
                <Menu />
                <CPUFlagButton />
               <div className="sub-main">
-                {//
-                 // cpuFlag ? 
-                 // (
-                 //   <CanvasMain />
-                 // ) :
-                 // (
-                 //   <CanvasWEBGL />
-                 // )
-                }
                 <CanvasMain />
                 <NodeEditor />
-                
                 <div className="edit-mode-holder">
                   <EditMode />
                 </div>
@@ -50,6 +43,7 @@ export default function App() {
           </NodeProvider>
       </ImageProvider>
       </ModeProvider>
+      </ThemeProvider>
     </>
   );
 }

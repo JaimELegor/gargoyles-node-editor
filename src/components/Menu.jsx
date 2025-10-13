@@ -4,15 +4,21 @@ import Window from "./Window";
 import DirectoryTree from "./AsciiTree";
 import { useActiveFilter } from "../hooks/useActiveState";
 import { useNode } from "../contexts/NodeContext";
+import { useTheme } from "../contexts/ThemeContext";  
 import ThreeScene from "./ThreeD";
 import DownloadButton from "./ImageDownloader";
 import '../styles/Menu.css';
 import ImportNodes from "./ImportNodes";
 import ExportNodes from "./ExportNodes";
 
+
 export default function Menu(){
     const { isActive } = useActiveFilter();
     const { setSelectedNode } = useNode();
+    const { theme } = useTheme();  
+    
+    const logoImage = theme === 'dark' ? '/logo-dark.png' : '/logo2.png';
+    
     return (
     <div className="menu-parent"> 
         {isActive ? (
@@ -24,9 +30,9 @@ export default function Menu(){
         
         ) : (
             <Window title="MENU">
-            <img
-            src="logo2.png"
-            style={{ backgroundColor: "white", width: "280px", height: "280px" }}
+            <div 
+                className="logo"
+                style={{ backgroundImage: `url(${logoImage})` }}
             />
             <Tabs>
             <Tab label="Gargoyles.Inventory">

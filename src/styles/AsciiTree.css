@@ -1,9 +1,10 @@
+@import url('theme.css');
 
 .ascii {
-  font-family: "Courier New", monospace;
+  font-family: var(--tree-font);
   white-space: pre;
-  color: black;
-  font-size: 14px;
+  color: var(--tree-text);
+  font-size: var(--tree-font-size);
   display: flex;
   flex-direction: column;
   padding-top: 4px;
@@ -13,12 +14,12 @@
   display: flex;
   position: relative;
   flex-direction: column;
-  padding-left: 20px;
+  padding-left: var(--tree-padding-left);
 }
 
 .tree-row.selected .tree-branch {
-  background-color: #0060df; /* Win95 blue highlight */
-  color: white;
+  background-color: var(--tree-selection-bg);
+  color: var(--tree-selection-text);
 }
 
 .tree-branch {
@@ -26,81 +27,119 @@
   flex-direction: row;
   align-items: center;
   position: relative;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
+
+.tree-branch:hover:not(.selected .tree-branch) {
+  background-color: var(--hover-bg);
+}
+
+/* Horizontal connector line */
 .tree-branch::before {
   content: "";
   position: absolute;
-  left: -12px; /* Offset to connect with the vertical line */
+  left: calc(-1 * var(--tree-branch-offset));
   top: 50%;
-  width: 12px; /* Length of the horizontal connector */
-  height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    #999,
-    #999 2px,
-    transparent 2px,
-    transparent 4px
-  );
+  width: var(--tree-branch-offset);
+  height: var(--tree-line-width);
+  background: var(--tree-line-color);
   transform: translateY(-50%);
 }
 
+/* Dashed style for neon mode */
+html[data-theme="neon"] .tree-branch::before {
+  background: repeating-linear-gradient(
+    to right,
+    var(--tree-line-color),
+    var(--tree-line-color) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
 .expand-icon {
-  width: 13px;
+  width: var(--tree-expand-size);
+  height: var(--tree-expand-size);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 13px;
   text-align: center;
-  border: 1px solid black;
-  background: white;
-  font-size: 14px;
+  border: var(--tree-expand-border);
+  background: var(--tree-expand-bg);
+  font-size: var(--tree-expand-icon-size);
   margin-right: 5px;
   cursor: pointer;
-  line-height: 16px;
+  line-height: 1;
   user-select: none;
   position: relative;
+  flex-shrink: 0;
+  border-radius: var(--radius);
 }
 
+/* Connector after expand icon */
 .expand-icon::after {
   content: "";
   position: absolute;
   top: 50%;
   left: 100%;
-  width: 9px; 
-  height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    #999,
-    #999 2px,
-    transparent 2px,
-    transparent 4px
-  );
+  width: 9px;
+  height: var(--tree-line-width);
+  background: var(--tree-line-color);
   transform: translateY(-50%);
 }
 
+/* Dashed style for neon mode */
+html[data-theme="neon"] .expand-icon::after {
+  background: repeating-linear-gradient(
+    to right,
+    var(--tree-line-color),
+    var(--tree-line-color) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
 
 .icon {
-  width: 16px;
-  height: 16px;
+  width: var(--tree-icon-size);
+  height: var(--tree-icon-size);
   margin-right: 6px;
   margin-left: 4px;
+  flex-shrink: 0;
 }
 
 .label {
   margin-right: 8px;
+  font-family: var(--tree-font);
 }
 
-/* Vertical dashed line for branches */
+/* Vertical line for tree structure */
 .tree-row::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 8px; /* aligns the dashed line with [+]/[-] icon */
-  border-left: 1px dashed #999;
+  left: 8px;
+  width: var(--tree-line-width);
+  background: var(--tree-line-color);
 }
 
-/* Remove line for the last child in each group */
+/* Dashed vertical line for neon mode */
+html[data-theme="neon"] .tree-row::before {
+  border-left: var(--tree-line-width) dashed var(--tree-line-color);
+  background: none;
+}
+
+/* Solid vertical line for light/dark modes */
+html[data-theme="light"] .tree-row::before,
+html[data-theme="dark"] .tree-row::before {
+  border-left: var(--tree-line-width) solid var(--tree-line-color);
+  background: none;
+}
+
+/* Cap the vertical line for last child */
 .tree-row:last-child::before {
-  height: 12px; /* small cap to stop the line early */
+  height: 12px;
 }

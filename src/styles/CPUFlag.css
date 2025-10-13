@@ -1,0 +1,114 @@
+@import url('theme.css');
+.toggle-on,
+.toggle-off {
+  margin-top: var(--toggle-margin-top);
+  width: var(--toggle-width);
+  height: var(--toggle-height);
+  border: var(--toggle-border);
+  border-radius: var(--toggle-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  user-select: none;
+  /* Common properties for text-based toggles */
+  display: var(--toggle-text-display);
+  align-items: center;
+  justify-content: center;
+  padding: var(--toggle-padding);
+  font-family: "Roboto Mono";
+  font-size: var(--toggle-font-size);
+  font-weight: var(--toggle-font-weight);
+}
+
+/* NEON theme - image-based, must come first and be specific */
+html[data-theme="neon"] .toggle-on {
+  background-image: var(--toggle-on-bg) !important;
+  background-size: var(--toggle-bg-size) !important;
+  background-position: var(--toggle-bg-position) !important;
+  background-repeat: var(--toggle-bg-repeat) !important;
+  background-color: transparent !important;
+  display: block !important;
+  padding: 0 !important;
+}
+
+html[data-theme="neon"] .toggle-off {
+  background-image: var(--toggle-off-bg) !important;
+  background-size: var(--toggle-bg-size) !important;
+  background-position: var(--toggle-bg-position) !important;
+  background-repeat: var(--toggle-bg-repeat) !important;
+  background-color: transparent !important;
+  display: block !important;
+  padding: 0 !important;
+}
+
+/* Hide text for neon */
+html[data-theme="neon"] .toggle-on::after,
+html[data-theme="neon"] .toggle-off::after {
+  display: none !important;
+}
+
+/* LIGHT/DARK themes - color-based with text */
+html[data-theme="light"] .toggle-on,
+html[data-theme="dark"] .toggle-on {
+  background-image: none;
+  background-color: var(--toggle-on-bg);
+  color: var(--toggle-text-color-on);
+}
+
+html[data-theme="light"] .toggle-off,
+html[data-theme="dark"] .toggle-off {
+  background-image: none;
+  background-color: var(--toggle-off-bg);
+  color: var(--toggle-text-color-off);
+}
+
+/* Show GPU ON/OFF text for light/dark themes */
+html[data-theme="light"] .toggle-on::after,
+html[data-theme="dark"] .toggle-on::after {
+  content: "GPU ON";
+}
+
+html[data-theme="light"] .toggle-off::after,
+html[data-theme="dark"] .toggle-off::after {
+  content: "GPU OFF";
+}
+
+/* Hover effects */
+.toggle-on:hover,
+.toggle-off:hover {
+  transform: scale(1.05);
+  filter: brightness(110%);
+}
+
+.toggle-on:active,
+.toggle-off:active {
+  transform: scale(0.98);
+  filter: brightness(95%);
+}
+
+/* Light theme shadows */
+html[data-theme="light"] .toggle-on,
+html[data-theme="light"] .toggle-off {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme="light"] .toggle-on:hover {
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+html[data-theme="light"] .toggle-off:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark theme glows */
+html[data-theme="dark"] .toggle-on {
+  box-shadow: 0 0 8px rgba(95, 135, 175, 0.4);
+}
+
+html[data-theme="dark"] .toggle-on:hover {
+  box-shadow: 0 0 12px rgba(95, 135, 175, 0.6);
+}
+
+html[data-theme="dark"] .toggle-off:hover {
+  border-color: var(--accent);
+}

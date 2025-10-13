@@ -28,8 +28,8 @@ export function FilterProvider({ children }) {
       if (!filter) return null;
 
       return {
-        name,                         // short name for identification
-        func: (...args) => filter.processFunc(...args), // processing function
+        name,                    
+        func: (...args) => filter.processFunc(...args), 
         shader: filter.shader,
       };
     }).filter(Boolean); // remove any nulls

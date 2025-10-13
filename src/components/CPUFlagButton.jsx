@@ -1,4 +1,4 @@
-import "../styles/App.css";
+import "../styles/CPUFlag.css";
 import { useMode } from "../contexts/ModeContext";
 
 export default function CPUFlagButton() {

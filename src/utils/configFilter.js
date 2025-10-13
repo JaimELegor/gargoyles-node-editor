@@ -458,6 +458,682 @@ void main() {
   vec3 blended = mix(color.rgb, inverted, strength);
   gl_FragColor = vec4(blended, color.a);
 }`
+}, 
+{
+  name: "DITHER/Ordered/Bayer-Void",
+  icon: "🌀",
+  params: {
+    levels: { value: 2, min: 2, max: 16, step: 1 },
+    scale: { value: 4, min: 2, max: 16, step: 1 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [levels, scale] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+    const noise = (Math.sin((x * 12.9898 + y * 78.233) * 43758.5453) % 1 + 1) % 1;
+    const gray = (r + g + b) / (3 * 255);
+    const threshold = (Math.sin((x + y) / scale) * 0.5 + 0.5) * 0.7 + noise * 0.3;
+    const out = gray > threshold ? 255 : 0;
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = out;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float levels;
+uniform float scale;
+varying vec2 vTexCoord;
+
+float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
+
+void main(){
+  vec2 uv = vTexCoord * resolution;
+  vec3 col = texture2D(tex, vTexCoord).rgb;
+  float gray = dot(col, vec3(0.299,0.587,0.114));
+  float t = (sin((uv.x+uv.y)/scale)*0.5+0.5)*0.7 + rand(uv)*0.3;
+  float c = step(t, gray);
+  gl_FragColor = vec4(vec3(c),1.0);
+}`
+},
+{
+  name: "DITHER/Ordered/Random",
+  icon: "🎲",
+  params: {
+    strength: { value: 1, min: 0, max: 1, step: 0.05 }
+  },
+  processFunc: (img, r, g, b, a, x, y, strength) => {
+    const index = (x, y) => 4 * (x + y * img.width);
+    const gray = (r + g + b) / 3 / 255;
+    const noise = Math.random() * strength;
+    const out = gray + noise > 0.5 ? 255 : 0;
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = out;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float strength;
+varying vec2 vTexCoord;
+float rand(vec2 co){ return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453); }
+
+void main(){
+  vec3 col = texture2D(tex, vTexCoord).rgb;
+  float gray = dot(col, vec3(0.299,0.587,0.114));
+  float n = rand(vTexCoord * resolution) * strength;
+  float c = step(0.5, gray + n);
+  gl_FragColor = vec4(vec3(c),1.0);
+}`
+},
+{
+  name: "DITHER/Tone/BitTone",
+  icon: "🧱",
+  params: {
+    levels: { value: 4, min: 2, max: 16, step: 1 }
+  },
+  processFunc: (img, r, g, b, a, x, y, levels) => {
+    const index = (x, y) => 4 * (x + y * img.width);
+    const gray = (r + g + b) / 3;
+    const v = Math.floor(gray / (256 / levels)) * (255 / (levels - 1));
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = v;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform float levels;
+varying vec2 vTexCoord;
+
+void main(){
+  vec3 col = texture2D(tex, vTexCoord).rgb;
+  float gray = dot(col, vec3(0.299,0.587,0.114));
+  float q = floor(gray * levels) / (levels - 1.0);
+  gl_FragColor = vec4(vec3(q),1.0);
+}`
+},
+{
+  name: "DITHER/Pattern/Mosaic",
+  icon: "🧩",
+  params: {
+    size: { value: 6, min: 2, max: 20, step: 1 }
+  },
+  processFunc: (img, r, g, b, a, x, y, size) => {
+    const index = (x, y) => 4 * (x + y * img.width);
+    const cellX = Math.floor(x / size) * size;
+    const cellY = Math.floor(y / size) * size;
+    let sum = 0, count = 0;
+    for (let j = 0; j < size; j++) {
+      for (let i = 0; i < size; i++) {
+        const px = cellX + i, py = cellY + j;
+        if (px >= img.width || py >= img.height) continue;
+        const idx = index(px, py);
+        sum += (img.pixels[idx] + img.pixels[idx + 1] + img.pixels[idx + 2]) / 3;
+        count++;
+      }
+    }
+    const avg = sum / count;
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = avg;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float size;
+varying vec2 vTexCoord;
+void main(){
+  vec2 uv = vTexCoord * resolution;
+  vec2 cell = floor(uv / size) * size + size * 0.5;
+  vec3 col = texture2D(tex, cell / resolution).rgb;
+  gl_FragColor = vec4(col, 1.0);
+}`
+},
+{
+  name: "DITHER/Matrix/Bayer-2x2",
+  icon: "◽",
+  params: {},
+  processFunc: (img, r, g, b, a, x, y) => {
+    const index = (x, y) => 4 * (x + y * img.width);
+    const m = [[0,2],[3,1]];
+    const threshold = m[y % 2][x % 2] / 4;
+    const gray = (r + g + b) / (3 * 255);
+    const out = gray > threshold ? 255 : 0;
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = out;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+varying vec2 vTexCoord;
+void main(){
+  vec2 uv = vTexCoord * resolution;
+  int xi = int(mod(uv.x,2.0));
+  int yi = int(mod(uv.y,2.0));
+  float m[4]; m[0]=0.0;m[1]=2.0;m[2]=3.0;m[3]=1.0;
+  float threshold = m[xi+yi*2]/4.0;
+  float gray = dot(texture2D(tex,vTexCoord).rgb, vec3(0.299,0.587,0.114));
+  float c = step(threshold, gray);
+  gl_FragColor = vec4(vec3(c),1.0);
+}`
+},
+{
+  name: "DITHER/Matrix/Bayer-4x4",
+  icon: "◾",
+  params: {},
+  processFunc: (img, r, g, b, a, x, y) => {
+    const m = [
+      [0, 8, 2, 10],
+      [12, 4, 14, 6],
+      [3, 11, 1, 9],
+      [15, 7, 13, 5]
+    ];
+    const index = (x, y) => 4 * (x + y * img.width);
+    const threshold = m[y % 4][x % 4] / 16;
+    const gray = (r + g + b) / (3 * 255);
+    const out = gray > threshold ? 255 : 0;
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = out;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+varying vec2 vTexCoord;
+void main(){
+  vec2 uv = vTexCoord * resolution;
+  int xi = int(mod(uv.x,4.0));
+  int yi = int(mod(uv.y,4.0));
+  float m[16];
+  m[0]=0.0;m[1]=8.0;m[2]=2.0;m[3]=10.0;
+  m[4]=12.0;m[5]=4.0;m[6]=14.0;m[7]=6.0;
+  m[8]=3.0;m[9]=11.0;m[10]=1.0;m[11]=9.0;
+  m[12]=15.0;m[13]=7.0;m[14]=13.0;m[15]=5.0;
+  float threshold = m[xi+yi*4]/16.0;
+  float gray = dot(texture2D(tex,vTexCoord).rgb, vec3(0.299,0.587,0.114));
+  float c = step(threshold, gray);
+  gl_FragColor = vec4(vec3(c),1.0);
+}`
+},
+{
+  name: "DITHER/Matrix/Bayer-8x8",
+  icon: "◼️",
+  params: {},
+  processFunc: (img, r, g, b, a, x, y) => {
+    const m = [
+      [0,32,8,40,2,34,10,42],[48,16,56,24,50,18,58,26],
+      [12,44,4,36,14,46,6,38],[60,28,52,20,62,30,54,22],
+      [3,35,11,43,1,33,9,41],[51,19,59,27,49,17,57,25],
+      [15,47,7,39,13,45,5,37],[63,31,55,23,61,29,53,21]
+    ];
+    const index = (x, y) => 4 * (x + y * img.width);
+    const threshold = m[y % 8][x % 8] / 64;
+    const gray = (r + g + b) / (3 * 255);
+    const out = gray > threshold ? 255 : 0;
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = out;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+varying vec2 vTexCoord;
+void main(){
+  vec2 uv = vTexCoord * resolution;
+  float gray = dot(texture2D(tex,vTexCoord).rgb, vec3(0.299,0.587,0.114));
+  float t = fract(sin(dot(uv,vec2(12.9898,78.233)))*43758.5453);
+  float c = step(t, gray);
+  gl_FragColor = vec4(vec3(c),1.0);
+}`
+},
+{
+  name: "DITHER/Matrix/Bayer-16x16",
+  icon: "⬛",
+  params: {},
+  processFunc: (img, r, g, b, a, x, y) => {
+    const threshold = ((x * 37 + y * 17) % 256) / 255;
+    const index = (x, y) => 4 * (x + y * img.width);
+    const gray = (r + g + b) / (3 * 255);
+    const out = gray > threshold ? 255 : 0;
+    img.pixels[index(x, y)] = img.pixels[index(x, y) + 1] = img.pixels[index(x, y) + 2] = out;
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+varying vec2 vTexCoord;
+void main(){
+  vec2 uv = vTexCoord * resolution;
+  float gray = dot(texture2D(tex,vTexCoord).rgb, vec3(0.299,0.587,0.114));
+  float t = fract(sin(dot(uv, vec2(12.9898,78.233)))*43758.5453);
+  float c = step(t, gray);
+  gl_FragColor = vec4(vec3(c), 1.0);
+}`
+},
+{
+  name: "DISTORT/Fisheye",
+  icon: "🔳",
+  params: {
+    moveX: { value: 0, min: -1, max: 1, step: 0.01 },
+    moveY: { value: 0, min: -1, max: 1, step: 0.01 },
+    intensity: { value: 0.5, min: 0.01, max: 2, step: 0.01 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [moveX, moveY, intensity] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+
+    const cx = img.width / 2 + moveX * img.width / 2;
+    const cy = img.height / 2 + moveY * img.height / 2;
+
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    const factor = 1.0 / (1.0 + intensity * (dist * dist) / ((img.width * img.width + img.height * img.height) / 2));
+
+    const srcX = Math.floor(cx + dx * factor);
+    const srcY = Math.floor(cy + dy * factor);
+
+    if (srcX < 0 || srcX >= img.width || srcY < 0 || srcY >= img.height) return;
+
+    const srcI = index(srcX, srcY);
+    const dstI = index(x, y);
+
+    img.pixels[dstI]     = img.pixels[srcI];
+    img.pixels[dstI + 1] = img.pixels[srcI + 1];
+    img.pixels[dstI + 2] = img.pixels[srcI + 2];
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float moveX;
+uniform float moveY;
+uniform float intensity;
+varying vec2 vTexCoord;
+
+void main() {
+  vec2 uv = vTexCoord * resolution;
+
+  vec2 center = vec2(0.5 + moveX * 0.5, 0.5 + moveY * 0.5) * resolution;
+  vec2 delta = uv - center;
+  float dist2 = dot(delta, delta);
+
+  float factor = 1.0 / (1.0 + intensity * dist2 / dot(resolution, resolution));
+
+  vec2 srcUV = center + delta * factor;
+  vec3 color = texture2D(tex, srcUV / resolution).rgb;
+
+  gl_FragColor = vec4(color, 1.0);
+}`
+}, 
+{
+  name: "DISTORT/Holdein",
+  icon: "🎞️",
+  params: {
+    moveX: { value: 0, min: -1, max: 1, step: 0.01 },
+    moveY: { value: 0, min: -1, max: 1, step: 0.01 },
+    intensity: { value: 0.5, min: 0.0, max: 2.0, step: 0.01 },
+    direction: { value: 0, min: 0, max: 1, step: 1 } // 0 = vertical, 1 = horizontal
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [moveX, moveY, intensity, direction] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+
+    // Normalized position
+    const nx = x / img.width - 0.5;
+    const ny = y / img.height - 0.5;
+
+    // Slitscan offset curve
+    const offset = Math.sin((direction === 0 ? ny : nx) * Math.PI) * intensity;
+
+    // Shift coordinates
+    const srcX = Math.floor(x + moveX * img.width * offset);
+    const srcY = Math.floor(y + moveY * img.height * offset);
+
+    if (srcX < 0 || srcX >= img.width || srcY < 0 || srcY >= img.height) return;
+
+    const srcI = index(srcX, srcY);
+    const dstI = index(x, y);
+
+    img.pixels[dstI]     = img.pixels[srcI];
+    img.pixels[dstI + 1] = img.pixels[srcI + 1];
+    img.pixels[dstI + 2] = img.pixels[srcI + 2];
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float moveX;
+uniform float moveY;
+uniform float intensity;
+uniform float direction;
+varying vec2 vTexCoord;
+
+void main() {
+  vec2 uv = vTexCoord;
+
+  // Normalized center coordinates
+  vec2 centered = uv - 0.5;
+
+  // Slitscan offset curve
+  float offset = sin((direction == 0.0 ? centered.y : centered.x) * 3.14159) * intensity;
+
+  // Apply directional shift
+  vec2 shifted = uv + vec2(moveX * offset, moveY * offset);
+
+  // Sample image with shifted coordinates
+  vec3 color = texture2D(tex, shifted).rgb;
+  gl_FragColor = vec4(color, 1.0);
+}`
+}, 
+{
+  name: "DITHER/Stucki/LinesGlitch",
+  icon: "⚡",
+  params: {
+    levels: { value: 4, min: 2, max: 16, step: 1 },
+    glitchAmp: { value: 2.0, min: 0.0, max: 10.0, step: 0.1 },
+    lineAmp: { value: 0.4, min: 0.0, max: 1.0, step: 0.05 },
+    direction: { value: 0, min: 0, max: 1, step: 1 } // 0 = horizontal, 1 = vertical
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [levels, glitchAmp, lineAmp, direction] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+    const w = img.width, h = img.height;
+
+    // Convert to grayscale
+    const i = index(x, y);
+    const oldPixel = (r + g + b) / 3;
+    const quantLevel = Math.round((oldPixel / 255) * (levels - 1));
+    const newPixel = (quantLevel / (levels - 1)) * 255;
+    const error = oldPixel - newPixel;
+
+    // Apply glitch offset
+    const glitchOffset = Math.sin((direction === 0 ? y : x) * 0.05) * glitchAmp;
+
+    // Apply line modulation
+    const line = Math.sin((direction === 0 ? y : x) * 0.1) * lineAmp * 255;
+    const finalVal = newPixel + line;
+
+    // Write the quantized + glitch-modulated pixel
+    img.pixels[i]     = finalVal;
+    img.pixels[i + 1] = finalVal;
+    img.pixels[i + 2] = finalVal;
+
+    // Stucki diffusion matrix (normalized)
+    // (Error distributed to neighbors)
+    const diffusion = [
+      [2, 8, 4],
+      [1, 4, 2]
+    ];
+    const div = 42; // total weight sum of matrix
+    for (let dy = 0; dy < 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const weight = diffusion[dy]?.[Math.abs(dx) - (dx < 0 ? 0 : 0)] ?? 0;
+        if (weight === 0) continue;
+        const nx = x + dx;
+        const ny = y + dy + 1;
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        const ni = index(nx, ny);
+        const nVal = (img.pixels[ni] + (error * weight) / div);
+        img.pixels[ni] = img.pixels[ni + 1] = img.pixels[ni + 2] = nVal;
+      }
+    }
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float levels;
+uniform float glitchAmp;
+uniform float lineAmp;
+uniform float direction;
+varying vec2 vTexCoord;
+
+void main() {
+  vec2 uv = vTexCoord;
+  vec3 color = texture2D(tex, uv).rgb;
+  float gray = dot(color, vec3(0.299, 0.587, 0.114));
+
+  // Quantization
+  float quantLevel = floor(gray * (levels - 1.0) + 0.5);
+  float q = quantLevel / (levels - 1.0);
+
+  // Line modulation (sinusoidal streaks)
+  float coord = direction == 0.0 ? uv.y : uv.x;
+  float line = sin(coord * resolution.y * 0.1) * lineAmp;
+
+  // Glitch offset
+  float glitch = sin(coord * resolution.y * 0.05) * glitchAmp / resolution.x;
+  vec2 glitchUV = uv + vec2(direction == 0.0 ? glitch : 0.0, direction == 1.0 ? glitch : 0.0);
+
+  // Sample again with glitch offset
+  vec3 gcolor = texture2D(tex, glitchUV).rgb;
+  float ggray = dot(gcolor, vec3(0.299, 0.587, 0.114));
+  ggray = floor(ggray * (levels - 1.0) + 0.5) / (levels - 1.0);
+
+  // Mix the two grayscale samples
+  float finalGray = mix(q, ggray, 0.5) + line;
+  finalGray = clamp(finalGray, 0.0, 1.0);
+
+  gl_FragColor = vec4(vec3(finalGray), 1.0);
+}`
+},
+{
+  name: "DITHER/Stucki/Glitch",
+  icon: "⚡",
+  params: {
+    levels: { value: 4, min: 2, max: 16, step: 1 },
+    glitchAmp: { value: 2.0, min: 0.0, max: 10.0, step: 0.1 },
+    direction: { value: 0, min: 0, max: 1, step: 1 } // 0 = horizontal, 1 = vertical
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [levels, glitchAmp, direction] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+    const w = img.width, h = img.height;
+
+    const i = index(x, y);
+    const oldPixel = (r + g + b) / 3;
+    const quantLevel = Math.round((oldPixel / 255) * (levels - 1));
+    const newPixel = (quantLevel / (levels - 1)) * 255;
+    const error = oldPixel - newPixel;
+
+    // Glitch offset based on sine distortion
+    const glitchOffset = Math.sin((direction === 0 ? y : x) * 0.05) * glitchAmp;
+    const srcX = Math.min(Math.max(0, Math.floor(x + (direction === 0 ? glitchOffset : 0))), w - 1);
+    const srcY = Math.min(Math.max(0, Math.floor(y + (direction === 1 ? glitchOffset : 0))), h - 1);
+    const srcI = index(srcX, srcY);
+
+    const val = img.pixels[srcI];
+    img.pixels[i] = img.pixels[i + 1] = img.pixels[i + 2] = val;
+
+    // Stucki diffusion (approximation)
+    const diffusion = [
+      [0, 0, 0, 8, 4],
+      [2, 4, 8, 4, 2],
+      [1, 2, 4, 2, 1]
+    ];
+    const div = 42;
+    for (let dy = 0; dy < 3; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const weight = diffusion[dy][dx + 2];
+        if (!weight) continue;
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+        const ni = index(nx, ny);
+        const nVal = (img.pixels[ni] + (error * weight) / div);
+        img.pixels[ni] = img.pixels[ni + 1] = img.pixels[ni + 2] = nVal;
+      }
+    }
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float levels;
+uniform float glitchAmp;
+uniform float direction;
+varying vec2 vTexCoord;
+
+void main() {
+  vec2 uv = vTexCoord;
+  vec3 color = texture2D(tex, uv).rgb;
+  float gray = dot(color, vec3(0.299, 0.587, 0.114));
+
+  // Glitch offset along one axis
+  float coord = direction == 0.0 ? uv.y : uv.x;
+  float glitch = sin(coord * resolution.y * 0.05) * glitchAmp / resolution.x;
+
+  // Apply directional offset
+  vec2 glitchUV = uv + vec2(direction == 0.0 ? glitch : 0.0, direction == 1.0 ? glitch : 0.0);
+
+  // Resample the texture
+  vec3 gcolor = texture2D(tex, glitchUV).rgb;
+  float ggray = dot(gcolor, vec3(0.299, 0.587, 0.114));
+
+  // Quantize grayscale (simulate dithering)
+  float quantLevel = floor(ggray * (levels - 1.0) + 0.5);
+  float finalGray = quantLevel / (levels - 1.0);
+
+  gl_FragColor = vec4(vec3(finalGray), 1.0);
+}`
+},
+{
+  name: "DITHER/ErrorDiffusion/VerticalLines",
+  icon: "🟥",
+  params: {
+    levels: { value: 1, min: 0.5, max: 3, step: 0.1 },
+    spread: { value: 1, min: 0, max: 1, step: 0.05 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [levels, spread] = params;
+    const quantize = (v) => Math.round(levels * v / 255) * (255 / levels);
+    const index = (x, y) => 4 * (x + y * img.width);
+
+    function dither(errR, errG, errB, arr, i, portion) {
+      if (i < 0 || i >= arr.length) return;
+      arr[i]     += errR * portion;
+      arr[i + 1] += errG * portion;
+      arr[i + 2] += errB * portion;
+    }
+
+    let newR = quantize(r);
+    let newG = quantize(g);
+    let newB = quantize(b);
+
+    img.pixels[index(x, y)]     = newR;
+    img.pixels[index(x, y) + 1] = newG;
+    img.pixels[index(x, y) + 2] = newB;
+
+    const errR = (r - newR) * spread;
+    const errG = (g - newG) * spread;
+    const errB = (b - newB) * spread;
+
+    const portion = 1 / 10;
+    // Distribute error mostly to the right (vertical lines)
+    dither(errR, errG, errB, img.pixels, index(x + 1, y), portion);
+    dither(errR, errG, errB, img.pixels, index(x + 2, y), portion);
+    dither(errR, errG, errB, img.pixels, index(x + 1, y - 1), portion);
+    dither(errR, errG, errB, img.pixels, index(x + 1, y + 1), portion);
+    dither(errR, errG, errB, img.pixels, index(x + 2, y + 1), portion);
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float levels;
+varying vec2 vTexCoord;
+
+float quantize(float v, float l) {
+  return floor(v * l) / l;
+}
+
+void main() {
+  vec4 color = texture2D(tex, vTexCoord);
+  vec3 c = vec3(
+    quantize(color.r, levels),
+    quantize(color.g, levels),
+    quantize(color.b, levels)
+  );
+  gl_FragColor = vec4(c, color.a);
+}`
+},
+{
+  name: "DITHER/ErrorDiffusion/Shifted",
+  icon: "🪄",
+  params: {
+    shift: { value: 3, min: 1, max: 20, step: 1 },
+    errorFactor: { value: 1.0, min: 0.5, max: 2.0, step: 0.1 },
+    levels: { value: 1, min: 0.5, max: 3, step: 0.1 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [ shift, errorFactor, levels ] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+    const quantize = (v) => Math.round(levels * v / 255) * (255 / levels);
+
+    // Quantize current pixel
+    const newR = quantize(r);
+    const newG = quantize(g);
+    const newB = quantize(b);
+
+    img.pixels[index(x, y)]     = newR;
+    img.pixels[index(x, y) + 1] = newG;
+    img.pixels[index(x, y) + 2] = newB;
+
+    // Compute quantization error
+    const errR = (r - newR) * errorFactor;
+    const errG = (g - newG) * errorFactor;
+    const errB = (b - newB) * errorFactor;
+
+    // Diffuse all error to the right, "shift" pixels away
+    const targetX = x + Math.round(shift);
+    const targetY = y; // only horizontal shift
+    if (targetX < img.width) {
+      const i = index(targetX, targetY);
+      img.pixels[i]     = Math.min(255, Math.max(0, img.pixels[i]     + errR));
+      img.pixels[i + 1] = Math.min(255, Math.max(0, img.pixels[i + 1] + errG));
+      img.pixels[i + 2] = Math.min(255, Math.max(0, img.pixels[i + 2] + errB));
+    }
+  },
+
+  shader: `
+precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float levels;
+uniform float shift;
+uniform float errorFactor;
+varying vec2 vTexCoord;
+
+float quantize(float v, float l) {
+  return floor(v * l) / l;
+}
+
+void main() {
+  vec4 color = texture2D(tex, vTexCoord);
+  float l = levels;
+  // (Shader version would need multi-pass or texture writes for error diffusion,
+  // so this placeholder keeps it simple.)
+  vec3 c = vec3(
+    quantize(color.r, l),
+    quantize(color.g, l),
+    quantize(color.b, l)
+  );
+  gl_FragColor = vec4(c, color.a);
+}
+`
+}, 
+{
+  name: "COLOR/Point/Threshold",
+  icon: "⚫⚪",
+  params: {
+    threshold: { value: 0.5, min: 0, max: 1, step: 0.01 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    const [threshold] = params;
+    const index = (x, y) => 4 * (x + y * img.width);
+    const luminance = (r + g + b) / (3 * 255); // normalize to 0–1
+    const value = luminance > threshold ? 255 : 0;
+    img.pixels[index(x, y)]     = value;
+    img.pixels[index(x, y) + 1] = value;
+    img.pixels[index(x, y) + 2] = value;
+  },
+
+  shader: `
+precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float threshold;
+varying vec2 vTexCoord;
+
+void main() {
+  vec4 color = texture2D(tex, vTexCoord);
+  float luminance = (color.r + color.g + color.b) / 3.0;
+  float v = luminance > threshold ? 1.0 : 0.0;
+  gl_FragColor = vec4(vec3(v), color.a);
+}
+`
 }
 ];
 //export const configFilter = [{

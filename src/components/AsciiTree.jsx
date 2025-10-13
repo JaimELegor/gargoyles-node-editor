@@ -77,7 +77,6 @@ export function AsciiTree({ data, prefix = ""}) {
               }`}
           >
             <div className="tree-branch">
-              {/* [+] or [-] toggle for folders */}
               {node.children?.length > 0 && (
                 <span
                   className="expand-icon"
@@ -86,8 +85,6 @@ export function AsciiTree({ data, prefix = ""}) {
                   {open ? "-" : "+"}
                 </span>
               )}
-
-              {/* Folder or File Icon */}
               <img
                 src={
                   node.children?.length > 0
@@ -97,11 +94,7 @@ export function AsciiTree({ data, prefix = ""}) {
                 alt="icon"
                 className="icon"
               />
-
-              {/* Label */}
               <span className="label">{node.label}</span>
-
-              {/* Checkbox for leaf nodes */}
               {node.children?.length === 0 && (
                 <label className="checkbox-wrapper">
                   <input
@@ -112,8 +105,6 @@ export function AsciiTree({ data, prefix = ""}) {
                 </label>
               )}
             </div>
-
-            {/* Render children recursively */}
             {open && node.children?.length > 0 && (
               <AsciiTree
                 data={node.children}

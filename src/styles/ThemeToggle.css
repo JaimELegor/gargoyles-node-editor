@@ -1,0 +1,25 @@
+.theme-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #c0c0c0;
+  border: 2px solid #808080;
+  box-shadow: 2px 2px #404040;
+  min-width: 150px;
+  z-index: 10000;
+  color: black;
+  margin-top: 2px;
+}
+
+.theme-dropdown .dropdown-item {
+  padding: 4px 8px;
+  cursor: pointer;
+  user-select: none;
+  font-family: "Roboto Mono";
+  font-size: 11px;
+}
+
+.theme-dropdown .dropdown-item:hover {
+  background: #000080;
+  color: #fff;
+}

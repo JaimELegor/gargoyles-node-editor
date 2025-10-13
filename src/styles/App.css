@@ -1,7 +1,4 @@
-:root {
-  height: 100%;
-  width: 100%;
-}
+@import url('theme.css');
 
 body {
   display: flex;
@@ -11,7 +8,7 @@ body {
   margin: 0;
   align-items: stretch;
   justify-content: flex-start;
-  background-color: #39FF14;
+  background-color: var(--bg);
 }
 
 .main {
@@ -35,43 +32,13 @@ body {
 .edit-mode-holder {
   position: relative;
   top: 30px;
-  left: 0px;
+  left: -30px;
   z-index: 10000;
 
 }
 
-.toggle-on {
-  margin-top: 50px;
-  width: 121px;
-  height: 160px;
-  background-size: cover;       
-  background-position: center; 
-  background-repeat: no-repeat;
-  background-image: url("/toggle-on.png");
-  cursor: pointer;
-}
-
-.toggle-off {
-  margin-top: 50px;
-  width: 121px;
-  height: 160px;
-  background-size: cover;       
-  background-position: center; 
-  background-repeat: no-repeat;
-  background-image: url("/toggle-off.png");
-  cursor: pointer;
-}
 
 
-@font-face {
-  font-family: "MS Sans Serif";
-  src: url("/pixel-sans-serif.woff") format("woff"); 
-}
-
-@font-face {
-  font-family: "MS Sans Serif-normal";
-  src: url("/ms-sans-serif-2.otf.woff2") format("woff"); 
-}
 
 
 

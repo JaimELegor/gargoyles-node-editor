@@ -1,0 +1,549 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600&display=swap');
+
+:root {
+  height: 100%;
+  width: 100%;
+  
+  /* Dark theme is now DEFAULT */
+  /* Base colors - Subtle dark gray palette */
+  --bg: #2b2b2b;                    
+  --logo-image: url("/logo-dark.png");
+  --text: #b8b8b8;                  
+  --text-muted: #808080;            
+  --panel: #323232;                 
+  --panel-darker: #252525;          
+  --border: #4a4a4a;                
+  --border-light: #555555;          
+  
+  --accent: #5f87af;                
+  --accent-bright: #7ba3cc;         
+  --accent-contrast: #ffffff;       
+  
+  --font-ui: "Roboto Mono", "SF Mono", "Consolas", "Monaco", "Courier New", monospace;
+  --font-ui-normal: var(--font-ui);
+  
+  --window-width: 310px;
+  --window-height: 700px;
+  --window-bg: #323232;             
+  --window-border-top: 1px solid #4a4a4a;     
+  --window-border-left: 1px solid #4a4a4a;
+  --window-border-right: 1px solid #4a4a4a;
+  --window-border-bottom: 1px solid #4a4a4a;
+  --window-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --window-radius: 0px;             
+  --window-margin: 20px;
+  --window-margin-right: 20px;
+  
+  --title-bar-display: flex;
+  --title-bar-bg: #2b2b2b;          
+  --title-bar-color: #b8b8b8;       
+  --title-bar-padding: 6px 10px;    
+  --title-bar-font-weight: 400;     
+  --title-bar-font-size: 11px;      
+  --title-bar-image-rendering: auto;
+  --title-bar-font-smoothing: antialiased;
+  --title-bar-font-smooth: auto;
+  --title-bar-border-bottom: 1px solid #4a4a4a;  
+  
+  --close-btn-bg: transparent;
+  --close-btn-color: #808080;       
+  --close-btn-font-size: 12px;
+  --close-btn-hover-bg: rgba(255, 255, 255, 0.08);
+  --close-btn-hover-color: #b8b8b8;
+  
+  --window-body-padding: 12px;
+  --window-body-font-size: 12px;
+  --window-body-padding-right: 12px;
+  
+  --radius: 0px;                    
+  --filter-blur: none;
+  
+  --selection-bg: #5f87af;          
+  --selection-text: #ffffff;
+  --hover-bg: rgba(95, 135, 175, 0.15);  
+  --active-bg: rgba(95, 135, 175, 0.25);
+  --separator: #4a4a4a;             
+  
+  --tab-bg: #2b2b2b;
+  --tab-bg-active: #323232;
+  --tab-border-top: 1px solid #4a4a4a;
+  --tab-border-left: 1px solid #4a4a4a;
+  --tab-border-right: 1px solid #4a4a4a;
+  --tab-border-bottom: 1px solid transparent;
+  --tab-text: #b8b8b8;
+  --tab-font: "Roboto Mono";
+  --tab-font-size: 12px;
+  --tab-padding: 6px 14px;
+  
+  --panel-bg: #323232;
+  --panel-border: 1px solid #4a4a4a;
+  --panel-border-top: 1px solid #4a4a4a;
+  --panel-border-left: 1px solid #4a4a4a;
+  --panel-border-right: 1px solid #4a4a4a;
+  --panel-border-bottom: 1px solid #4a4a4a;
+  
+  --button-bg: #3a3a3a;
+  --button-text: #b8b8b8;
+  --button-border-top: 1px solid #4a4a4a;
+  --button-border-left: 1px solid #4a4a4a;
+  --button-border-bottom: 1px solid #4a4a4a;
+  --button-border-right: 1px solid #4a4a4a;
+  --button-shadow: none;
+  --button-radius: 0px;
+  --button-font: "Roboto Mono";
+  
+  --scrollbar-width: 8px;
+  --scrollbar-thumb: #4a4a4a;
+  --scrollbar-track: #2b2b2b;
+
+  --tree-font: var(--font-ui);       
+  --tree-font-size: 12px;
+  --tree-text: #b8b8b8;
+  --tree-line-color: #4a4a4a;        
+  --tree-line-style: solid;
+  --tree-line-width: 1px;
+  
+  --tree-expand-bg: transparent;
+  --tree-expand-border: 1px solid #4a4a4a;
+  --tree-expand-size: 11px;
+  --tree-expand-icon-size: 11px;
+  
+  --tree-selection-bg: #5f87af;      
+  --tree-selection-text: #ffffff;
+  
+  --tree-icon-size: 14px;
+  --tree-padding-left: 16px;
+  --tree-branch-offset: 10px;
+
+  --node-width: 250px;
+  --node-height: 250px;
+  --node-frame-bg: none;
+  --node-frame-overlay: none;
+  --node-frame-display: none;
+  --node-border: 1px solid #4a4a4a;
+  --node-bg: rgba(35, 35, 35, 0.6);
+  --node-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --node-corner-lines: block;      
+  
+  --image-width: 220px;
+  --image-height: 220px;
+  --image-fit: cover;
+  
+  --edge-stroke: #4a4a4a;          
+  --edge-width: 1.5;
+  --edge-filter: none;
+  --edge-hover-stroke: #00ff88;    
+  --edge-dash: 5,5;
+  --edge-marker: url(#arrowhead-dark);
+  --edge-opacity: 0.8;
+  
+  --hover-overlay-bg: rgba(95, 135, 175, 0.25);
+  --hover-overlay-color: #ffffff;
+  --hover-text-blur: none;
+
+  --model-width: 30vh;
+  
+  --slider-track-height: 2px;
+  --slider-track-border: none;
+  --slider-track-bg: #4a4a4a;
+  
+  --slider-thumb-size: 12px;
+  --slider-thumb-bg: #5f87af;
+  --slider-thumb-border: 1px solid #4a4a4a;
+  --slider-thumb-radius: 2px;
+  --slider-thumb-margin: -6px;
+
+  --mode-bg: rgba(42, 42, 42, 0.8);
+  --mode-bg-size: auto;
+  --mode-bg-repeat: no-repeat;
+  --mode-bg-position: center;
+  --mode-width: 80px;
+  --mode-height: 36px;
+  --mode-width-disabled: 80px;
+  --mode-height-disabled: 36px;
+  --mode-padding: 8px 12px;
+  --mode-border: 1px solid #4a4a4a;
+  --mode-radius: 0px;
+  --mode-font: var(--font-ui);
+  --mode-font-size: 11px;
+  --mode-font-size-disabled: 11px;
+  --mode-color: #b8b8b8;
+  --mode-text-shadow: none;
+  --mode-filter: none;
+  --mode-filter-disabled: opacity(0.4);
+  --mode-box-shadow: none;
+
+  --toggle-width: 80px;
+  --toggle-height: 40px;
+  --toggle-margin-top: 50px;
+  --toggle-on-bg: #5f87af;        
+  --toggle-off-bg: #2a2a2a;       
+  --toggle-bg-size: auto;
+  --toggle-bg-position: center;
+  --toggle-bg-repeat: no-repeat;
+  --toggle-border: 1px solid #4a4a4a;
+  --toggle-radius: 4px;
+  --toggle-text-display: flex;     
+  --toggle-padding: 8px 12px;
+  --toggle-font-size: 15px;
+  --toggle-font-weight: 500;
+  --toggle-text-color-on: #ffffff;
+  --toggle-text-color-off: #808080;
+}
+
+/* Neon theme (moved from default) */
+html[data-theme="neon"] {
+  --bg: #39FF14;
+  --text: #0b0c0f;
+  --panel: #ffffff;
+  --border: #000000;
+  --accent: #39FF14;
+  --logo-image: url("/logo2.png");
+
+  --font-ui: "MS Sans Serif", system-ui, sans-serif;
+
+  --window-width: 310px;
+  --window-height: 700px;
+  --window-bg: white;
+  --window-border-top: 2px solid #fff;
+  --window-border-left: 2px solid #fff;
+  --window-border-right: 2px solid #666;
+  --window-border-bottom: 2px solid #666;
+  --window-box-shadow: inset -1px -1px 0 #999, inset 1px 1px 0 #ccc;
+  --window-radius: 0px;
+  --window-margin: 20px;
+  --window-margin-right: 100px;
+  
+  --title-bar-display: flex;
+  --title-bar-bg: #000082;
+  --title-bar-color: white;
+  --title-bar-padding: 4px 8px;
+  --title-bar-font-weight: bold;
+  --title-bar-font-size: 14px;
+  --title-bar-image-rendering: pixelated;
+  --title-bar-font-smoothing: none;
+  --title-bar-font-smooth: never;
+  
+  --close-btn-bg: transparent;
+  --close-btn-color: white;
+  --close-btn-font-size: 16px;
+  --close-btn-hover-bg: rgba(255,255,255,0.2);
+  
+  --window-body-padding: 10px;
+  --window-body-font-size: 14px;
+  --window-body-padding-right: 17px;
+  
+  --radius: 0px;
+  --filter-blur: blur(4px);
+
+  --tab-bg: #c0c0c0;
+  --tab-bg-active: #c0c0c0;
+  --tab-border-top: 2px solid #fff;
+  --tab-border-left: 2px solid #fff;
+  --tab-border-right: 2px solid #808080;
+  --tab-border-bottom: 1px solid #fff;
+  --tab-text: black;
+  --tab-font: var(--font-ui-normal);
+  --tab-font-size: 12px;
+  --tab-padding: 4px 8px;
+  
+  --panel-bg: #fff;
+  --panel-border: 2px solid #808080;
+  --panel-border-top: 2px solid #808080;
+  --panel-border-left: 2px solid #808080;
+  --panel-border-right: 2px solid #808080;
+  --panel-border-bottom: 2px solid #808080;
+  
+  --button-bg: linear-gradient(#dcdcdc, #c0c0c0);
+  --button-text: #000000;
+  --button-border-top: 2px solid #ffffff;
+  --button-border-left: 2px solid #ffffff;
+  --button-border-bottom: 2px solid #808080;
+  --button-border-right: 2px solid #808080;
+  --button-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  --button-radius: 2px;
+  
+  --scrollbar-width: 12px;
+  --scrollbar-thumb: #bfbfbf;
+  --scrollbar-track: #f1f1f1;
+
+  --tree-font: "Courier New", monospace;
+  --tree-font-size: 14px;
+  --tree-text: black;
+  --tree-line-color: #999;
+  --tree-line-style: dashed;
+  --tree-line-width: 1px;
+  
+  --tree-expand-bg: white;
+  --tree-expand-border: 1px solid black;
+  --tree-expand-size: 13px;
+  --tree-expand-icon-size: 14px;
+  
+  --tree-selection-bg: #0060df;      
+  --tree-selection-text: white;
+  
+  --tree-icon-size: 16px;
+  --tree-padding-left: 20px;
+  --tree-branch-offset: 12px;
+
+  --node-width: 250px;
+  --node-height: 250px;
+  --node-frame-bg: url("/static.png");
+  --node-frame-overlay: url("/monitor.png");
+  --node-frame-display: block;
+  --node-border: none;
+  --node-bg: transparent;
+  --node-box-shadow: none;
+  --node-corner-lines: none;
+  
+  --image-width: 225px;
+  --image-height: 225px;
+  --image-fit: fill;
+  
+  --edge-stroke: black;
+  --edge-width: 4;
+  --edge-filter: url(#blurFilter);
+  --edge-hover-stroke: red;
+  --edge-dash: none;
+  --edge-marker: none;
+  --edge-opacity: 1;
+  
+  --hover-overlay-bg: rgba(0, 0, 0, 0.6);
+  --hover-overlay-color: white;
+  --hover-text-blur: url(#text-blur);
+
+  --model-width: 30vh;
+  
+  --slider-track-height: 4px;
+  --slider-track-border: 2px dashed #333;
+  --slider-track-bg: transparent;
+  
+  --slider-thumb-size: 16px;
+  --slider-thumb-bg: #000000;
+  --slider-thumb-border: none;
+  --slider-thumb-radius: 0px;
+  --slider-thumb-margin: -9px;
+
+  --mode-bg: url("/key.png");
+  --mode-bg-size: cover;
+  --mode-bg-repeat: no-repeat;
+  --mode-bg-position: center;
+  --mode-width: 85px;
+  --mode-height: 85px;
+  --mode-width-disabled: 90px;
+  --mode-height-disabled: 90px;
+  --mode-padding: 10px;
+  --mode-border: none;
+  --mode-radius: 15px;
+  --mode-font: "Arial Narrow", Arial, sans-serif;
+  --mode-font-size: 24px;
+  --mode-font-size-disabled: 28px;
+  --mode-color: #111;
+  --mode-text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+  --mode-filter: brightness(95%);
+  --mode-filter-disabled: blur(1px);
+  --mode-box-shadow: none;
+
+  --toggle-width: 121px;
+  --toggle-height: 160px;
+  --toggle-margin-top: 50px;
+  --toggle-on-bg: url("/toggle-on.png");
+  --toggle-off-bg: url("/toggle-off.png");
+  --toggle-bg-size: cover;
+  --toggle-bg-position: center;
+  --toggle-bg-repeat: no-repeat;
+  --toggle-border: none;
+  --toggle-radius: 0px;
+  --toggle-text-display: none;
+  --toggle-padding: 0;
+}
+
+html[data-theme="light"] {
+  --bg: #fcfefc;
+  --logo-image: url("/logo2.png");
+  --window-width: 310px;
+  --window-height: 700px;
+  --window-bg: #ffffff;
+  --window-border-top: 1px solid #e3e3e7;
+  --window-border-left: 1px solid #e3e3e7;
+  --window-border-right: 1px solid #e3e3e7;
+  --window-border-bottom: 1px solid #e3e3e7;
+  --window-box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  --window-radius: 12px;
+  --window-margin: 20px;
+  --window-margin-right: 20px;
+  
+  /* Title bar tokens - Light has clean title bar */
+  --title-bar-display: flex;
+  --title-bar-bg: #f8f9fa;
+  --title-bar-color: #0b0c0f;
+  --title-bar-padding: 12px 16px;
+  --title-bar-font-weight: 600;
+  --title-bar-font-size: 14px;
+  --title-bar-image-rendering: auto;
+  --title-bar-font-smoothing: auto;
+  --title-bar-font-smooth: auto;
+  
+  /* Close button tokens */
+  --close-btn-bg: transparent;
+  --close-btn-color: #5f6368;
+  --close-btn-font-size: 16px;
+  --close-btn-hover-bg: rgba(0,0,0,0.05);
+  
+  /* Window body tokens */
+  --window-body-padding: 20px;
+  --window-body-font-size: 14px;
+  --window-body-padding-right: 20px;
+  
+  /* General effects */
+  --radius: 12px;
+  --filter-blur: none;
+
+
+  --tab-bg: #f0f0f0;
+  --tab-bg-active: #ffffff;
+  --tab-border-top: 1px solid #e0e0e0;
+  --tab-border-left: 1px solid #e0e0e0;
+  --tab-border-right: 1px solid #e0e0e0;
+  --tab-border-bottom: 1px solid transparent;
+  --tab-text: #333333;
+  --tab-font: "Roboto Mono";
+  --tab-font-size: 13px;
+  --tab-padding: 4px;
+  
+  /* Panel/Button tokens - Light */
+  --panel-bg: #ffffff;
+  --panel-border: 1px solid #e0e0e0;
+  --panel-border-top: 1px solid #e0e0e0;
+  --panel-border-left: 1px solid #e0e0e0;
+  --panel-border-right: 1px solid #e0e0e0;
+  --panel-border-bottom: 1px solid #e0e0e0;
+  
+  --button-bg: #f5f5f5;
+  --button-text: #333333;
+  --button-border-top: 1px solid #d0d0d0;
+  --button-border-left: 1px solid #d0d0d0;
+  --button-border-bottom: 1px solid #d0d0d0;
+  --button-border-right: 1px solid #d0d0d0;
+  --button-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --button-radius: 4px;
+  --button-font: "Roboto Mono";
+  
+  --scrollbar-width: 8px;
+  --scrollbar-thumb: #c0c0c0;
+  --scrollbar-track: #f5f5f5;
+  /*Ascii*/
+  --tree-font: "Roboto Mono";
+  --tree-font-size: 13px;
+  --tree-text: #333333;
+  --tree-line-color: #d0d0d0;
+  --tree-line-style: solid;
+  --tree-line-width: 1px;
+  
+  --tree-expand-bg: #f5f5f5;
+  --tree-expand-border: 1px solid #d0d0d0;
+  --tree-expand-size: 12px;
+  --tree-expand-icon-size: 12px;
+  
+  --tree-selection-bg: #e3f2fd;     /* Light blue */
+  --tree-selection-text: #1976d2;
+  
+  --tree-icon-size: 16px;
+  --tree-padding-left: 18px;
+  --tree-branch-offset: 10px;
+
+
+    /* Node Editor tokens - Light (AI detection boxes with neon colors) */
+  --node-width: 250px;
+  --node-height: 250px;
+  --node-frame-bg: none;
+  --node-frame-overlay: none;
+  --node-frame-display: none;
+  --node-border: 3px solid;
+  --node-bg: transparent;
+  --node-box-shadow: 0 0 15px currentColor, inset 0 0 10px rgba(255,255,255,0.1);
+  --node-corner-lines: block;      /* Show corner brackets */
+  
+  --image-width: 220px;
+  --image-height: 220px;
+  --image-fit: cover;
+  
+  /* Edge tokens - Light (thin neon pink/green) */
+  --edge-stroke: #00ff88;          /* Neon green default */
+  --edge-width: 2;
+  --edge-filter: drop-shadow(0 0 4px currentColor);
+  --edge-hover-stroke: #ff0080;    /* Hot pink on hover */
+  --edge-dash: none;
+  --edge-marker: url(#arrowhead);
+  --edge-opacity: 0.9;
+  
+  /* Hover overlay - Light */
+  --hover-overlay-bg: rgba(255, 255, 255, 0.85);
+  --hover-overlay-color: #1976d2;
+  --hover-text-blur: none;
+
+
+    /* 3D Model / Slider tokens - Light (clean modern) */
+  --model-width: 30vh;
+  
+  --slider-track-height: 6px;
+  --slider-track-border: none;
+  --slider-track-bg: #e0e0e0;
+  
+  --slider-thumb-size: 18px;
+  --slider-thumb-bg: #1976d2;
+  --slider-thumb-border: 2px solid #ffffff;
+  --slider-thumb-radius: 50%;
+  --slider-thumb-margin: -8px;
+
+
+    /* Mode button tokens - Light (clean pill buttons with gradients) */
+  --mode-bg: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  --mode-bg-size: auto;
+  --mode-bg-repeat: no-repeat;
+  --mode-bg-position: center;
+  --mode-width: 100px;
+  --mode-height: 46px;
+  --mode-width-disabled: 100px;
+  --mode-height-disabled: 46px;
+  --mode-padding: 12px 20px;
+  --mode-border: 2px solid #e0e0e0;
+  --mode-radius: 24px;
+  --mode-font: "Roboto Mono";
+  --mode-font-size: 14px;
+  --mode-font-size-disabled: 14px;
+  --mode-color: #333333;
+  --mode-text-shadow: none;
+  --mode-filter: none;
+  --mode-filter-disabled: opacity(0.5);
+  --mode-box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+
+    /* Toggle tokens - Light (minimalist switch) */
+  --toggle-width: 80px;
+  --toggle-height: 42px;
+  --toggle-margin-top: 50px;
+  --toggle-on-bg: #4caf50;        /* Green when ON */
+  --toggle-off-bg: #e0e0e0;       /* Gray when OFF */
+  --toggle-bg-size: auto;
+  --toggle-bg-position: center;
+  --toggle-bg-repeat: no-repeat;
+  --toggle-border: 2px solid #d0d0d0;
+  --toggle-radius: 24px;
+  --toggle-text-display: flex;     /* Show GPU ON/OFF text */
+  --toggle-padding: 8px 12px;
+  --toggle-font-size: 15px;
+  --toggle-font-weight: 600;
+  --toggle-text-color-on: #ffffff;
+  --toggle-text-color-off: #999999;
+}
+
+/* Fonts */
+@font-face {
+font-family: "MS Sans Serif";
+src: url("/pixel-sans-serif.woff") format("woff");
+}
+@font-face {
+font-family: "MS Sans Serif-normal";
+src: url("/ms-sans-serif-2.otf.woff2") format("woff");
+}

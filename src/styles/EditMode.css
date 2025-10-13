@@ -1,41 +1,115 @@
-
+@import url('theme.css');
 .edit-mode {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
 
 .mode,
 .mode-disabled {
   position: relative;
   box-sizing: border-box;
-  padding: 10px;
+  padding: var(--mode-padding);
   cursor: pointer;
-  font-family: "Arial Narrow", Arial, sans-serif;
-  font-stretch: condensed;  
-  font-kerning: normal;  
+  font-family: var(--mode-font);
+  font-stretch: condensed;
+  font-kerning: normal;
   text-rendering: optimizeLegibility;
-  color: black; 
-  filter: blur(1px); 
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  font-size: 28px;
-  background-image: url("/key.png");
+  color: var(--mode-color);
+  text-shadow: var(--mode-text-shadow);
+  background: var(--mode-bg);
+  background-repeat: var(--mode-bg-repeat);
+  background-position: var(--mode-bg-position);
+  background-size: var(--mode-bg-size);
+  border: var(--mode-border);
+  border-radius: var(--mode-radius);
+  box-shadow: var(--mode-box-shadow);
+  transition: all 0.15s ease;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 500;
 }
 
+/* Disabled state - matches hover appearance */
 .mode-disabled {
-  height: 90px;
-  width: 90px;
+  height: var(--mode-height-disabled);
+  width: var(--mode-width-disabled);
+  font-size: var(--mode-font-size-disabled);
+  cursor: pointer;
+  
+  /* Apply same styling as hover */
+  transform: translateY(-2px);
+  filter: brightness(105%);
+  opacity: 1;
 }
 
+/* Active state */
 .mode {
-  height: 85px;              
-  width: 85px;
-  border-radius: 15px;
-  font-size: 24px;
-  color: #111; 
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
-  filter: brightness(95%);
+  height: var(--mode-height);
+  width: var(--mode-width);
+  font-size: var(--mode-font-size);
+  filter: var(--mode-filter);
+  opacity: 1;
 }
 
+/* Hover state */
+.mode:hover {
+  transform: translateY(-2px);
+  filter: brightness(105%);
+}
 
+.mode:active {
+  transform: translateY(0);
+  filter: brightness(90%);
+}
+
+/* Light theme: disabled matches hover */
+html[data-theme="light"] .mode-disabled {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+}
+
+html[data-theme="light"] .mode:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+}
+
+html[data-theme="light"] .mode:active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+}
+
+/* Dark theme: disabled matches hover */
+html[data-theme="dark"] .mode-disabled {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(95, 135, 175, 0.4);
+  background: rgba(50, 50, 50, 0.9);
+}
+
+html[data-theme="dark"] .mode:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(95, 135, 175, 0.4);
+  background: rgba(50, 50, 50, 0.9);
+}
+
+html[data-theme="dark"] .mode:active {
+  background: rgba(35, 35, 35, 0.9);
+  transform: translateY(1px);
+}
+
+/* Neon theme: disabled matches hover */
+html[data-theme="neon"] .mode-disabled {
+  filter: brightness(100%) blur(0.5px);
+}
+
+html[data-theme="neon"] .mode:hover {
+  filter: brightness(100%) blur(0.5px);
+}
+
+html[data-theme="neon"] .mode:active {
+  border-color: var(--accent);
+  filter: brightness(85%);
+}

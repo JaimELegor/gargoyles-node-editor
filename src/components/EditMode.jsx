@@ -22,7 +22,7 @@ export default function EditMode() {
             
             key={mode}
             id={mode}
-            className={activeMode === mode ? "mode" : "mode-disabled"}
+            className={activeMode === mode ? "mode-disabled" : "mode"}
             onClick={() => setMode(mode)}
         >
             {mode}
