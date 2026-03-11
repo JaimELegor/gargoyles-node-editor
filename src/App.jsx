@@ -12,39 +12,57 @@ import TopBar from './components/TopBar';
 import EditMode from './components/EditMode';
 import CPUFlagButton from './components/CPUFlagButton';
 import { ModeProvider } from './contexts/ModeContext';
-import { useState } from 'react';
-
+import CodeViewer from './components/CodeViewer';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { useActiveFilter } from "./hooks/useActiveState";
+import { AuthProvider } from './contexts/AuthContext';
+import GithubAuthButton from './components/GitHubAuthBtn';
+import { FilterRegistryProvider } from './contexts/FilterRegistryContext';
 
-export default function App() {
+function AppContent() {
+
   return (
     <>
-    <ThemeProvider>
-    <ModeProvider>
-      <ImageProvider>
-          <NodeProvider>
-            <FilterProvider>
-              <TopBar />
-              
-            <div className="main">     
-               <Menu />
-               <CPUFlagButton />
-              <div className="sub-main">
-                <CanvasMain />
-                <NodeEditor />
-                <div className="edit-mode-holder">
-                  <EditMode />
-                </div>
-              </div>
-            </div>
-            
-            <CanvasPreview />
-            </FilterProvider>
-          </NodeProvider>
-      </ImageProvider>
-      </ModeProvider>
-      </ThemeProvider>
+     {/* <TopBar /> */}
+      <div className="main">     
+        <Menu />
+        <CPUFlagButton />
+        <div className="sub-main">
+          <CanvasMain />
+          <NodeEditor />
+                
+        <div className="right-panel">
+          {/*<div className="edit-mode-holder">
+            <EditMode />
+          </div>
+          */}
+          
+        </div>
+        </div>
+        <GithubAuthButton />
+      </div>
+      <CanvasPreview />
     </>
   );
 }
 
+export default function App() {
+  return (
+    <FilterRegistryProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <ModeProvider>
+            <ImageProvider>
+              <NodeProvider>
+                <FilterProvider>
+                  <AppContent />
+                </FilterProvider>
+              </NodeProvider>
+            </ImageProvider>
+          </ModeProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </FilterRegistryProvider>
+
+  );
+}

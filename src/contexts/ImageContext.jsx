@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 
 const ImageContext = createContext();
 
@@ -10,6 +10,7 @@ export function ImageProvider({ children }) {
   const [previewCanvas, setPreviewCanvas] = useState(null);
   const [mainCanvas, setMainCanvas] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const previewCanvasRef = useRef(null);
 
   useEffect(() => {
     if (imgDataURL) {
@@ -19,13 +20,18 @@ export function ImageProvider({ children }) {
     }
   }, [imgDataURL]);
 
+  useEffect(() => {
+    previewCanvasRef.current = previewCanvas;
+  }, [previewCanvas]);
+
   return (
     <ImageContext.Provider value={{ 
       imgDataURL, setImgDataURL, 
       monitorCanvas, setMonitorCanvas, 
       previewCanvas, setPreviewCanvas,
       mainCanvas, setMainCanvas,
-      canvasSize, setCanvasSize
+      canvasSize, setCanvasSize,
+      previewCanvasRef
        }}>
       {children}
     </ImageContext.Provider>

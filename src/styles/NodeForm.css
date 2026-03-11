@@ -1,0 +1,142 @@
+.nf {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 12px;
+  z-index: inherit;
+}
+
+.nf-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.nf-grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.nf-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  color: var(--text-muted);
+}
+
+.nf-input {
+  background: var(--panel-darker);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px;
+  outline: none;
+}
+
+.nf-input:focus {
+  border-color: var(--accent);
+}
+
+.nf-inputError {
+  border-color: #e53e3e !important;
+}
+
+.nf-inputError:focus {
+  border-color: #e53e3e !important;
+  box-shadow: 0 0 0 2px rgba(229, 62, 62, 0.2);
+}
+
+.nf-error {
+  color: #e53e3e;
+  font-size: 11px;
+  line-height: 1.3;
+  margin-top: -2px;
+}
+
+.nf-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--separator);
+}
+
+.nf-sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+
+.nf-param {
+  padding: 10px;
+  background: var(--panel-darker);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.nf-actions {
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.nf-btn {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-top: var(--button-border-top);
+  border-left: var(--button-border-left);
+  border-right: var(--button-border-right);
+  border-bottom: var(--button-border-bottom);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.nf-btn:hover {
+  background: var(--hover-bg);
+}
+
+.nf-btnDanger {
+  border-color: var(--border-light);
+  color: var(--text);
+}
+
+/* Code editor wrapper */
+.ce-wrap {
+  border: 1px solid var(--border);
+  background: var(--panel-darker);
+  min-height: 160px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* react-simple-code-editor renders a <textarea> and a <pre> */
+.ce-textarea,
+.ce-pre {
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.ce-pre {
+  margin: 0;
+}
+
+.nf-spinner {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  animation: nf-spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+
+@keyframes nf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

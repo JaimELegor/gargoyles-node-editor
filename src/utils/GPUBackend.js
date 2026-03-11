@@ -10,7 +10,7 @@ export class GPUBackend {
                 gl_Position = vec4(aPosition, 1.0);
             }
         `;
-        // persistent buffer and shader cache
+
         this.buffer = p5.createGraphics(p5.width, p5.height, p5.WEBGL);
         this.shaders = {};
         this.singleShader = {};
@@ -40,8 +40,6 @@ export class GPUBackend {
         }
     }
 
-
-    // Run a shader pass on the buffer
     runShaderPass(buffer, shader, params, inputTex) {
         buffer.shader(shader);
 

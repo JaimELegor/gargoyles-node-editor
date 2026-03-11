@@ -28,5 +28,5 @@ export default function ExportNodes() {
     URL.revokeObjectURL(url);
   };
 
-  return <button onClick={handleExport}>Export Gargoyles</button>;
+  return <button onClick={handleExport}>Manifold.Export</button>;
 }

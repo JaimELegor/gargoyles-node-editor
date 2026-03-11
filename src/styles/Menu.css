@@ -1,5 +1,15 @@
 @import url('theme.css');
 
+.editor {
+  display: flex;
+  flex-direction: row;
+}
+
+.visualizer {
+  display: flex;
+  flex-direction: column;
+}
+
 .menu h1 {
   text-align: center;
 }
@@ -60,4 +70,14 @@ html[data-theme="light"] .logo {
 
 .menu-content h2 {
   font-size: 1.25em;
+}
+
+.vc-btn {
+  text-decoration: underline;
+  user-select: none;
+  cursor: pointer;
+}
+
+.vc-btn:active {
+  color: var(--accent-bright);
 }

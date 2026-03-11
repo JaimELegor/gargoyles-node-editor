@@ -12,6 +12,10 @@
   "dependencies": {
     "@p5-wrapper/react": "^4.4.2",
     "@xyflow/react": "^12.8.2",
+    "prismjs": "^1.30.0",
+    "react-markdown": "^10.1.0",
+    "react-simple-code-editor": "^0.14.1",
+    "remark-gfm": "^4.0.1",
     "three": "^0.179.1"
   },
   "peerDependencies": {

@@ -25,7 +25,6 @@
   height: 100%;
 }
 
-/* Edge styling with theme support */
 .edge-line {
   stroke: var(--edge-stroke);
   stroke-width: var(--edge-width);
@@ -42,19 +41,10 @@
   stroke: var(--edge-hover-stroke);
 }
 
-/* Light theme: cycle through neon colors for nodes */
-html[data-theme="light"] .node:nth-child(4n+1) {
-  --node-color: #00ff88;  /* Neon green */
-}
-html[data-theme="light"] .node:nth-child(4n+2) {
-  --node-color: #ff0080;  /* Hot pink */
-}
-html[data-theme="light"] .node:nth-child(4n+3) {
-  --node-color: #00d4ff;  /* Cyan */
-}
-html[data-theme="light"] .node:nth-child(4n+4) {
-  --node-color: #ffff00;  /* Yellow */
-}
+html[data-theme="light"] .node:nth-child(4n+1) { --node-color: #00ff88; }
+html[data-theme="light"] .node:nth-child(4n+2) { --node-color: #ff0080; }
+html[data-theme="light"] .node:nth-child(4n+3) { --node-color: #00d4ff; }
+html[data-theme="light"] .node:nth-child(4n+4) { --node-color: #ffff00; }
 
 .frame-container {
   position: relative;
@@ -68,26 +58,106 @@ html[data-theme="light"] .node:nth-child(4n+4) {
 .node {
   position: absolute;
   z-index: 1;
-  cursor: grab;
   user-select: none;
   color: var(--tree-text);
+  pointer-events: all; /* ← critical: overrides #editor pointer-events: none */
 }
 
-.node:active {
+.zoom-container {
+  transform-origin: top left;
+  transition: transform 0.1s ease;
+}
+
+/* ── Hover handles ── */
+.node-handles {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  /* padding-bottom bridges the gap so hover doesn't drop */
+  padding-bottom: 8px;
+}
+
+.node:hover .node-handles {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.node-handle {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ccc;
+  user-select: none;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+  backdrop-filter: blur(4px);
+}
+
+.node-handle:hover {
+  background: rgba(50, 50, 50, 0.95);
+  color: #fff;
+  transform: scale(1.15);
+}
+
+.node-handle--move {
+  cursor: grab;
+}
+.node-handle--move:active {
   cursor: grabbing;
 }
 
+.node-handle--link {
+  color: #00ff88;
+  border-color: rgba(0, 255, 136, 0.3);
+  cursor: pointer;
+}
+.node-handle--link.node-handle--active {
+  background: rgba(0, 255, 136, 0.2);
+  color: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.node-handle--edit {
+  color: #88aaff;
+  border-color: rgba(136, 170, 255, 0.3);
+  cursor: pointer;
+}
+.node-handle--edit.node-handle--active {
+  background: rgba(136, 170, 255, 0.2);
+  color: #88aaff;
+  box-shadow: 0 0 8px rgba(136, 170, 255, 0.4);
+}
+
+/* ── Node states ── */
+.node--connecting {
+  outline: 2px solid rgba(0, 255, 136, 0.6);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
+}
+
+.node--linkable {
+  outline: 1px dashed rgba(0, 255, 136, 0.3);
+  cursor: crosshair;
+}
+
+.node--editing {
+  outline: 2px solid rgba(136, 170, 255, 0.6);
+  box-shadow: 0 0 12px rgba(136, 170, 255, 0.2);
+}
+
+/* ── Image wrapper ── */
 .canvas-slot {
-  pointer-events: auto;
-  z-index: 2;
-}
-
-.canvas-slot.disable-cursor {
-  cursor: inherit !important;
-}
-
-.static {
-  cursor: pointer !important;
   pointer-events: auto;
   z-index: 2;
 }
@@ -96,6 +166,9 @@ html[data-theme="light"] .node:nth-child(4n+4) {
   width: var(--image-width);
   height: var(--image-height);
   background: var(--node-frame-bg);
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 2;
 }
 
 .main-image,
@@ -109,9 +182,7 @@ html[data-theme="light"] .node:nth-child(4n+4) {
   pointer-events: none;
 }
 
-.main-image {
-  z-index: 1;
-}
+.main-image { z-index: 1; }
 
 .frame-overlay {
   z-index: 2;
@@ -119,30 +190,9 @@ html[data-theme="light"] .node:nth-child(4n+4) {
   display: var(--node-frame-display);
 }
 
-/* Hide monitor frame in light/dark themes */
 html[data-theme="light"] .frame-overlay,
 html[data-theme="dark"] .frame-overlay {
   display: none;
-}
-
-.clickable-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.clickable-overlay ellipse {
-  pointer-events: auto;
-  cursor: pointer;
-}
-
-.zoom-container {
-  transform-origin: top left;
-  transition: transform 0.1s ease;
 }
 
 .image-wrapper {
@@ -156,13 +206,11 @@ html[data-theme="dark"] .frame-overlay {
   overflow: hidden;
 }
 
-/* Light theme: Use the cycling node color for border */
 html[data-theme="light"] .image-wrapper {
   border-color: var(--node-color);
   color: var(--node-color);
 }
 
-/* Dark theme: Add corner diagonal lines */
 html[data-theme="dark"] .image-wrapper::before,
 html[data-theme="dark"] .image-wrapper::after,
 html[data-theme="light"] .image-wrapper::before,
@@ -177,40 +225,28 @@ html[data-theme="light"] .image-wrapper::after {
 }
 
 html[data-theme="dark"] .image-wrapper::before {
-  top: 0;
-  left: 0;
-  border-right: none;
-  border-bottom: none;
+  top: 0; left: 0;
+  border-right: none; border-bottom: none;
 }
-
 html[data-theme="dark"] .image-wrapper::after {
-  bottom: 0;
-  right: 0;
-  border-left: none;
-  border-top: none;
+  bottom: 0; right: 0;
+  border-left: none; border-top: none;
 }
 
-/* Light theme: Full corner brackets (AI detection style) */
 html[data-theme="light"] .image-wrapper::before {
-  top: -3px;
-  left: -3px;
-  border-right: none;
-  border-bottom: none;
+  top: -3px; left: -3px;
+  border-right: none; border-bottom: none;
   border-color: var(--node-color);
 }
-
 html[data-theme="light"] .image-wrapper::after {
-  bottom: -3px;
-  right: -3px;
-  border-left: none;
-  border-top: none;
+  bottom: -3px; right: -3px;
+  border-left: none; border-top: none;
   border-color: var(--node-color);
 }
 
 .hover-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   width: var(--image-width);
   height: var(--image-height);
   background: var(--hover-overlay-bg);
@@ -236,4 +272,38 @@ html[data-theme="light"] .image-wrapper::after {
 
 .image-wrapper:hover .hover-overlay {
   opacity: 1;
+}
+
+.clickable-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.clickable-overlay ellipse {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.static {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.static-placeholder {
+  color: var(--tree-text, #666);
+  font-size: 11px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.4;
+  pointer-events: none;
+  font-family: var(--font-ui);
+  line-height: 1.4;
+  filter: blur(0.8px);
 }

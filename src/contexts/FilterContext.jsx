@@ -1,135 +1,106 @@
-import { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { configFilter } from "../utils/configFilter";
+import { createContext, useContext, useState, useEffect } from "react";
+import { useFilterRegistry } from "./FilterRegistryContext";
 import { useNode } from "./NodeContext";
 import { useImage } from "./ImageContext";
-import { disposeBackends } from "../utils/backends";
+import { useRef } from "react";
 
 const FilterContext = createContext();
 
 export function FilterProvider({ children }) {
-  
+  const { registry, findFilter, ready } = useFilterRegistry();
   const [filterFunctions, setFilterFunctions] = useState([]);
   const [filterValues, setFilterValues] = useState({});
   const [filterSingle, setFilterSingle] = useState(null);
   const [sliderParams, setSliderParams] = useState(null);
-  const { selectedNode, nodePreviews, 
-          setNodePreviews, lastSelected, 
-          setLastSelected, edges, setEdges,
-          order, setOrder, singleSelected, setSingleSelected
-         } = useNode();
+  
 
-  const { previewCanvas } = useImage();
+  const { selectedNode, nodePreviews, setNodePreviews,
+          lastSelected, setLastSelected, edges, setEdges,
+          order, setOrder, singleSelected, setSingleSelected } = useNode();
+  const { previewCanvas, previewCanvasRef } = useImage();
+  const prevSelectedNode = useRef(null);
 
   useEffect(() => {
+    if (!ready) return; // wait for DB
     const updated = order.map((name) => {
-      const filter = configFilter.find(
-        (f) => name === f.name.split("/").slice(-1)[0]
-      );
+      const filter = findFilter(name);
       if (!filter) return null;
-
       return {
-        name,                    
-        func: (...args) => filter.processFunc(...args), 
+        name,
+        func: (...args) => filter.processFunc(...args),
         shader: filter.shader,
       };
-    }).filter(Boolean); // remove any nulls
+    }).filter(Boolean);
     setFilterFunctions(updated);
     setNodePreviews((prev) => {
       const map = new Map(prev.map(p => [p.name, p]));
-      return order.map((name) => {
-        if (map.has(name)) {
-          return map.get(name); // keep existing blob/url
-        }
-        return { name, blob: null }; // new node
-      });
+      return order.map((name) => map.get(name) ?? { name, blob: null });
     });
-  }, [order]);
+    console.log(order);
+  }, [order, ready, registry]); // re-runs when registry changes live
 
   useEffect(() => {
+    if (!ready) return;
+
     if (selectedNode) {
+      // Node was just selected (or registry updated while selected)
+      prevSelectedNode.current = selectedNode;
       setLastSelected(selectedNode);
-      setSliderParams(configFilter.find(
-        (filter) => selectedNode === filter.name.split("/")[filter.name.split("/").length - 1]
-      ).params);
-      setFilterSingle(() => configFilter.find(
-        (filter) => selectedNode === filter.name.split("/")[filter.name.split("/").length - 1]
-      ));
+      const filter = findFilter(selectedNode);
+      setSliderParams(filter?.params ?? null);
+      setFilterSingle(() => filter ?? null);
+      return;
     }
 
-    if (!selectedNode && lastSelected && previewCanvas) {
-      previewCanvas.toBlob((blob) => {
-        if (!blob) return;
+    // selectedNode is null, only snapshot if we transitioned FROM a node
+   if (prevSelectedNode.current) {
+    const nameToSnapshot = prevSelectedNode.current;
+    prevSelectedNode.current = null;
 
-        setNodePreviews((prev) =>
-          prev.map((p) => {
-            if (p.name === lastSelected) {
-              if (p.url) URL.revokeObjectURL(p.url); // cleanup old one
-              return { ...p, blob, url: URL.createObjectURL(blob) };
-            }
-            return p;
-          })
-        );
-      });
-    }
+    // Use the ref — guaranteed to be the LAST rendered frame, not post-clear
+    const canvas = previewCanvasRef.current;
+    if (!canvas) return;
 
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      setNodePreviews((prev) =>
+        prev.map((p) => {
+          if (p.name === nameToSnapshot) {
+            if (p.url) URL.revokeObjectURL(p.url);
+            return { ...p, blob, url: URL.createObjectURL(blob) };
+          }
+          return p;
+        })
+      );
+    }, "image/webp", 0.8); // webp saves ~60% size vs PNG
+  }
 
-  }, [selectedNode, lastSelected]);
-//
-  //useEffect(() => {
-  //  if (!singleSelected || !previewCanvas) return;
-//
-  //  
-//
-  //  previewCanvas.toBlob((blob) => {
-  //    if (!blob) return;
-//
-//
-  //    setNodePreviews((prev) => {
-  //      let exists = false;
-  //      const updated = prev.map((p) => {
-  //        if (p.name === singleSelected) {
-  //          exists = true;
-  //          if (p.url) URL.revokeObjectURL(p.url);
-  //          return { ...p, blob, url: URL.createObjectURL(blob) };
-  //        }
-  //        return p;
-  //      });
-  //      if (!exists) {
-  //        // Add singleNode if not already in previews
-  //        updated.push({ name: singleSelected, blob, url: URL.createObjectURL(blob) });
-  //      }
-  //      return updated;
-  //    });
-  //  });
-  //}, [singleSelected, previewCanvas]);
+  }, [selectedNode, ready, registry]);
 
   useEffect(() => {
+    if (!ready) return;
     const newFilterValues = {};
     order.forEach(name => {
-      const filter = configFilter.find(f => f.name.split("/").slice(-1)[0] === name);
+      const filter = findFilter(name);
       if (filter) {
         newFilterValues[name] = {};
         Object.entries(filter.params).forEach(([paramName, param]) => {
-          // keep imported value if available, otherwise fall back to default
           newFilterValues[name][paramName] =
-            (filterValues?.[name]?.[paramName] !== undefined)
+            filterValues?.[name]?.[paramName] !== undefined
               ? filterValues[name][paramName]
               : param.value;
         });
       }
     });
     setFilterValues(newFilterValues);
-  }, [order]);
-
+  }, [order, ready, registry]);
 
   return (
-    <FilterContext.Provider value={{ 
-      order, setOrder, filterFunctions, 
-      setFilterFunctions, filterValues, 
-      setFilterValues, filterSingle, 
-      setFilterSingle, sliderParams, 
-      setSliderParams 
-      }}>
+    <FilterContext.Provider value={{
+      order, setOrder, filterFunctions, setFilterFunctions,
+      filterValues, setFilterValues, filterSingle, setFilterSingle,
+      sliderParams, setSliderParams
+    }}>
       {children}
     </FilterContext.Provider>
   );
@@ -138,4 +109,3 @@ export function FilterProvider({ children }) {
 export function useFilter() {
   return useContext(FilterContext);
 }
-

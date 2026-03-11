@@ -1,0 +1,29 @@
+@import url('theme.css');
+
+.code-viewer {
+  overflow: auto;
+  max-height: 500px;
+  width: 100%;
+  min-width: 0;
+  background: var(--window-bg);
+  border-top: var(--window-border-top);
+  border-left: var(--window-border-left);
+  border-right: var(--window-border-right);
+  border-bottom: var(--window-border-bottom);
+  box-shadow: var(--window-box-shadow);
+  border-radius: var(--window-radius);
+  z-index: 10001;
+}
+
+.codePre{
+  margin: 0;
+  padding: 12px;
+  white-space: pre-wrap; 
+}
+
+.code-col{
+  flex: 0 0 clamp(320px, 38vw, 520px);  
+  min-width: 0;
+  overflow: hidden;
+  z-index: 9999;
+}

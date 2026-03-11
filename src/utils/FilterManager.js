@@ -49,8 +49,7 @@ makeKeyForSingle(filterName, paramsMap) {
     clone.loadPixels();
     return clone;
   }
-
-  // ---------- main APIs ----------
+  
   applyAll(filters, paramsMap, { force = false } = {}) {
     if (!this.original) return null;
 

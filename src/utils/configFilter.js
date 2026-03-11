@@ -1134,6 +1134,964 @@ void main() {
   gl_FragColor = vec4(vec3(v), color.a);
 }
 `
+},
+{
+  name: "EFFECT/Mosaic/ColorMatched",
+  icon: "🎴",
+  params: {
+    numTiles: { value: 100, min: 16, max: 500, step: 16 },
+    randomness: { value: 0.5, min: 0, max: 1, step: 0.1 },
+    mirrorMode: { value: 1, min: 0, max: 1, step: 1 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    // On first pixel, process entire image
+    if (x === 0 && y === 0) {
+      const [numTiles, randomness, mirrorMode] = params;
+      const { width, height } = img;
+      
+      // Helper: Calculate average color of a region
+      const getAvgColor = (pixels, x, y, w, h, imgWidth) => {
+        let sumR = 0, sumG = 0, sumB = 0, count = 0;
+        for (let py = y; py < y + h && py < height; py++) {
+          for (let px = x; px < x + w && px < width; px++) {
+            const i = 4 * (px + py * imgWidth);
+            sumR += pixels[i];
+            sumG += pixels[i + 1];
+            sumB += pixels[i + 2];
+            count++;
+          }
+        }
+        return [sumR / count, sumG / count, sumB / count];
+      };
+      
+      // Helper: Color distance
+      const colorDist = (c1, c2) => {
+        return Math.sqrt(
+          (c1[0] - c2[0]) ** 2 + 
+          (c1[1] - c2[1]) ** 2 + 
+          (c1[2] - c2[2]) ** 2
+        );
+      };
+      
+      // Step 1: Create 2x2 mirrored mosaic if enabled
+      let sourcePixels, sourceWidth, sourceHeight;
+      
+      if (mirrorMode > 0.5) {
+        sourceWidth = width * 2;
+        sourceHeight = height * 2;
+        sourcePixels = new Uint8ClampedArray(sourceWidth * sourceHeight * 4);
+        
+        // Copy original and create flips
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const srcIdx = 4 * (x + y * width);
+            const r = img.pixels[srcIdx];
+            const g = img.pixels[srcIdx + 1];
+            const b = img.pixels[srcIdx + 2];
+            const a = img.pixels[srcIdx + 3];
+            
+            // Top-left: original
+            let idx = 4 * (x + y * sourceWidth);
+            sourcePixels[idx] = r;
+            sourcePixels[idx + 1] = g;
+            sourcePixels[idx + 2] = b;
+            sourcePixels[idx + 3] = a;
+            
+            // Top-right: horizontal flip
+            idx = 4 * ((width * 2 - x - 1) + y * sourceWidth);
+            sourcePixels[idx] = r;
+            sourcePixels[idx + 1] = g;
+            sourcePixels[idx + 2] = b;
+            sourcePixels[idx + 3] = a;
+            
+            // Bottom-left: vertical flip
+            idx = 4 * (x + (height * 2 - y - 1) * sourceWidth);
+            sourcePixels[idx] = r;
+            sourcePixels[idx + 1] = g;
+            sourcePixels[idx + 2] = b;
+            sourcePixels[idx + 3] = a;
+            
+            // Bottom-right: both flips
+            idx = 4 * ((width * 2 - x - 1) + (height * 2 - y - 1) * sourceWidth);
+            sourcePixels[idx] = r;
+            sourcePixels[idx + 1] = g;
+            sourcePixels[idx + 2] = b;
+            sourcePixels[idx + 3] = a;
+          }
+        }
+      } else {
+        sourcePixels = new Uint8ClampedArray(img.pixels);
+        sourceWidth = width;
+        sourceHeight = height;
+      }
+      
+      // Step 2: Generate random tiles for original image
+      const cols = Math.ceil(Math.sqrt(numTiles * (width / height)));
+      const rows = Math.ceil(numTiles / cols);
+      const baseTileW = width / cols;
+      const baseTileH = height / rows;
+      
+      const originalTiles = [];
+      let yPos = 0;
+      
+      for (let row = 0; row < rows; row++) {
+        const variation = randomness * baseTileH;
+        const tileH = row < rows - 1 
+          ? Math.max(10, Math.min(baseTileH + (Math.random() * 2 - 1) * variation, height - yPos - (rows - row - 1) * 10))
+          : height - yPos;
+        
+        let xPos = 0;
+        for (let col = 0; col < cols; col++) {
+          const varX = randomness * baseTileW;
+          const tileW = col < cols - 1
+            ? Math.max(10, Math.min(baseTileW + (Math.random() * 2 - 1) * varX, width - xPos - (cols - col - 1) * 10))
+            : width - xPos;
+          
+          const avgColor = getAvgColor(img.pixels, Math.floor(xPos), Math.floor(yPos), Math.floor(tileW), Math.floor(tileH), width);
+          originalTiles.push({ 
+            x: Math.floor(xPos), 
+            y: Math.floor(yPos), 
+            w: Math.floor(tileW), 
+            h: Math.floor(tileH), 
+            color: avgColor 
+          });
+          
+          xPos += tileW;
+        }
+        yPos += tileH;
+      }
+      
+      // Step 3: Generate random tiles from source (mosaic)
+      const sourceTiles = [];
+      yPos = 0;
+      
+      for (let row = 0; row < rows; row++) {
+        const variation = randomness * (sourceHeight / rows);
+        const tileH = row < rows - 1
+          ? Math.max(10, Math.min(sourceHeight / rows + (Math.random() * 2 - 1) * variation, sourceHeight - yPos - (rows - row - 1) * 10))
+          : sourceHeight - yPos;
+        
+        let xPos = 0;
+        for (let col = 0; col < cols; col++) {
+          const varX = randomness * (sourceWidth / cols);
+          const tileW = col < cols - 1
+            ? Math.max(10, Math.min(sourceWidth / cols + (Math.random() * 2 - 1) * varX, sourceWidth - xPos - (cols - col - 1) * 10))
+            : sourceWidth - xPos;
+          
+          const avgColor = getAvgColor(sourcePixels, Math.floor(xPos), Math.floor(yPos), Math.floor(tileW), Math.floor(tileH), sourceWidth);
+          sourceTiles.push({ 
+            x: Math.floor(xPos), 
+            y: Math.floor(yPos), 
+            w: Math.floor(tileW), 
+            h: Math.floor(tileH), 
+            color: avgColor 
+          });
+          
+          xPos += tileW;
+        }
+        yPos += tileH;
+      }
+      
+      // Step 4: Match and reorganize tiles
+      const usedTiles = new Set();
+      const newPixels = new Uint8ClampedArray(width * height * 4);
+      
+      for (const origTile of originalTiles) {
+        // Find best matching source tile
+        let bestIdx = -1;
+        let bestDist = Infinity;
+        
+        for (let i = 0; i < sourceTiles.length; i++) {
+          if (usedTiles.has(i)) continue;
+          const dist = colorDist(origTile.color, sourceTiles[i].color);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestIdx = i;
+          }
+        }
+        
+        // If all tiles used, reset
+        if (bestIdx === -1) {
+          usedTiles.clear();
+          bestIdx = 0;
+          for (let i = 0; i < sourceTiles.length; i++) {
+            const dist = colorDist(origTile.color, sourceTiles[i].color);
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestIdx = i;
+            }
+          }
+        }
+        
+        usedTiles.add(bestIdx);
+        const srcTile = sourceTiles[bestIdx];
+        
+        // Copy and resize source tile to original tile position
+        for (let dy = 0; dy < origTile.h; dy++) {
+          for (let dx = 0; dx < origTile.w; dx++) {
+            if (origTile.x + dx >= width || origTile.y + dy >= height) continue;
+            
+            const srcX = Math.min(srcTile.x + Math.floor(dx * srcTile.w / origTile.w), sourceWidth - 1);
+            const srcY = Math.min(srcTile.y + Math.floor(dy * srcTile.h / origTile.h), sourceHeight - 1);
+            const srcIdx = 4 * (srcX + srcY * sourceWidth);
+            const dstIdx = 4 * ((origTile.x + dx) + (origTile.y + dy) * width);
+            
+            newPixels[dstIdx] = sourcePixels[srcIdx];
+            newPixels[dstIdx + 1] = sourcePixels[srcIdx + 1];
+            newPixels[dstIdx + 2] = sourcePixels[srcIdx + 2];
+            newPixels[dstIdx + 3] = sourcePixels[srcIdx + 3];
+          }
+        }
+      }
+      
+      img.pixels.set(newPixels);
+    }
+    // No per-pixel processing needed after initial pass
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float numTiles;
+uniform float randomness;
+uniform float mirrorMode;
+varying vec2 vTexCoord;
+
+// Kaleidoscope effect - creates trippy mirrored patterns
+void main() {
+  vec2 uv = vTexCoord;
+  vec2 center = vec2(0.5, 0.5);
+  
+  // Convert to polar coordinates from center
+  vec2 pos = uv - center;
+  float angle = atan(pos.y, pos.x);
+  float dist = length(pos);
+  
+  // Create kaleidoscope segments based on numTiles
+  float segments = max(3.0, floor(numTiles / 20.0));
+  float segmentAngle = 6.28318 / segments;
+  
+  // Mirror the angle within each segment
+  float a = mod(angle, segmentAngle);
+  if (mod(floor(angle / segmentAngle), 2.0) > 0.5) {
+    a = segmentAngle - a;
+  }
+  
+  // Add some warping based on randomness
+  dist = dist * (1.0 + randomness * 0.3 * sin(a * segments * 2.0));
+  
+  // Convert back to cartesian
+  vec2 newUV = center + vec2(cos(a), sin(a)) * dist;
+  
+  // Add mirroring if enabled
+  if (mirrorMode > 0.5) {
+    newUV = abs(fract(newUV * 2.0) - 0.5);
+  }
+  
+  // Wrap coordinates
+  newUV = fract(newUV);
+  
+  vec4 color = texture2D(tex, newUV);
+  
+  // Add some psychedelic color shifting
+  color.rgb = mix(color.rgb, color.gbr, randomness * 0.3);
+  
+  gl_FragColor = color;
+}`
+},
+{
+  name: "GLITCH/PixelSort/Datamosh",
+  icon: "📊",
+  params: {
+    mode: { value: 0, min: 0, max: 3, step: 1 }, // 0=brightness, 1=hue, 2=saturation, 3=red
+    direction: { value: 0, min: 0, max: 3, step: 1 }, // 0=horizontal, 1=vertical, 2=diagonal, 3=radial
+    threshold: { value: 128, min: 0, max: 255, step: 1 },
+    reverse: { value: 0, min: 0, max: 1, step: 1 }
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    if (x === 0 && y === 0) {
+      const [mode, direction, threshold, reverse] = params;
+      const { width, height } = img;
+      
+      // Helper: Get sort value based on mode
+      const getSortValue = (r, g, b) => {
+        if (mode === 0) {
+          // Brightness
+          return 0.299 * r + 0.587 * g + 0.114 * b;
+        } else if (mode === 1) {
+          // Hue
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          if (max === min) return 0;
+          let h;
+          if (max === r) h = ((g - b) / (max - min)) % 6;
+          else if (max === g) h = (b - r) / (max - min) + 2;
+          else h = (r - g) / (max - min) + 4;
+          return h * 60;
+        } else if (mode === 2) {
+          // Saturation
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          return max === 0 ? 0 : (max - min) / max * 255;
+        } else {
+          // Red channel
+          return r;
+        }
+      };
+      
+      // Helper: Check if pixel should trigger sort
+      const shouldSort = (r, g, b) => {
+        const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+        return brightness > threshold;
+      };
+      
+      const newPixels = new Uint8ClampedArray(img.pixels);
+      
+      if (direction === 0) {
+        // Horizontal sorting
+        for (let row = 0; row < height; row++) {
+          let sortStart = -1;
+          
+          for (let col = 0; col <= width; col++) {
+            const idx = 4 * (col + row * width);
+            const r = img.pixels[idx];
+            const g = img.pixels[idx + 1];
+            const b = img.pixels[idx + 2];
+            
+            if (col < width && shouldSort(r, g, b)) {
+              if (sortStart === -1) sortStart = col;
+            } else {
+              if (sortStart !== -1) {
+                // Sort this section
+                const sortArray = [];
+                for (let i = sortStart; i < col; i++) {
+                  const idx = 4 * (i + row * width);
+                  sortArray.push({
+                    r: img.pixels[idx],
+                    g: img.pixels[idx + 1],
+                    b: img.pixels[idx + 2],
+                    a: img.pixels[idx + 3],
+                    val: getSortValue(img.pixels[idx], img.pixels[idx + 1], img.pixels[idx + 2])
+                  });
+                }
+                
+                sortArray.sort((a, b) => reverse ? b.val - a.val : a.val - b.val);
+                
+                for (let i = 0; i < sortArray.length; i++) {
+                  const idx = 4 * ((sortStart + i) + row * width);
+                  newPixels[idx] = sortArray[i].r;
+                  newPixels[idx + 1] = sortArray[i].g;
+                  newPixels[idx + 2] = sortArray[i].b;
+                  newPixels[idx + 3] = sortArray[i].a;
+                }
+                
+                sortStart = -1;
+              }
+            }
+          }
+        }
+      } else if (direction === 1) {
+        // Vertical sorting
+        for (let col = 0; col < width; col++) {
+          let sortStart = -1;
+          
+          for (let row = 0; row <= height; row++) {
+            const idx = 4 * (col + row * width);
+            const r = row < height ? img.pixels[idx] : 0;
+            const g = row < height ? img.pixels[idx + 1] : 0;
+            const b = row < height ? img.pixels[idx + 2] : 0;
+            
+            if (row < height && shouldSort(r, g, b)) {
+              if (sortStart === -1) sortStart = row;
+            } else {
+              if (sortStart !== -1) {
+                const sortArray = [];
+                for (let i = sortStart; i < row; i++) {
+                  const idx = 4 * (col + i * width);
+                  sortArray.push({
+                    r: img.pixels[idx],
+                    g: img.pixels[idx + 1],
+                    b: img.pixels[idx + 2],
+                    a: img.pixels[idx + 3],
+                    val: getSortValue(img.pixels[idx], img.pixels[idx + 1], img.pixels[idx + 2])
+                  });
+                }
+                
+                sortArray.sort((a, b) => reverse ? b.val - a.val : a.val - b.val);
+                
+                for (let i = 0; i < sortArray.length; i++) {
+                  const idx = 4 * (col + (sortStart + i) * width);
+                  newPixels[idx] = sortArray[i].r;
+                  newPixels[idx + 1] = sortArray[i].g;
+                  newPixels[idx + 2] = sortArray[i].b;
+                  newPixels[idx + 3] = sortArray[i].a;
+                }
+                
+                sortStart = -1;
+              }
+            }
+          }
+        }
+      } else if (direction === 2) {
+        // Diagonal sorting (top-left to bottom-right)
+        for (let start = 0; start < width + height - 1; start++) {
+          const pixels = [];
+          let col = start < height ? 0 : start - height + 1;
+          let row = start < height ? start : height - 1;
+          
+          while (col < width && row >= 0) {
+            const idx = 4 * (col + row * width);
+            pixels.push({
+              x: col,
+              y: row,
+              r: img.pixels[idx],
+              g: img.pixels[idx + 1],
+              b: img.pixels[idx + 2],
+              a: img.pixels[idx + 3],
+              val: getSortValue(img.pixels[idx], img.pixels[idx + 1], img.pixels[idx + 2]),
+              sort: shouldSort(img.pixels[idx], img.pixels[idx + 1], img.pixels[idx + 2])
+            });
+            col++;
+            row--;
+          }
+          
+          // Find sort regions and sort them
+          let sortStart = -1;
+          for (let i = 0; i <= pixels.length; i++) {
+            if (i < pixels.length && pixels[i].sort) {
+              if (sortStart === -1) sortStart = i;
+            } else {
+              if (sortStart !== -1) {
+                const toSort = pixels.slice(sortStart, i);
+                toSort.sort((a, b) => reverse ? b.val - a.val : a.val - b.val);
+                for (let j = 0; j < toSort.length; j++) {
+                  pixels[sortStart + j].r = toSort[j].r;
+                  pixels[sortStart + j].g = toSort[j].g;
+                  pixels[sortStart + j].b = toSort[j].b;
+                  pixels[sortStart + j].a = toSort[j].a;
+                }
+                sortStart = -1;
+              }
+            }
+          }
+          
+          // Write back
+          for (const p of pixels) {
+            const idx = 4 * (p.x + p.y * width);
+            newPixels[idx] = p.r;
+            newPixels[idx + 1] = p.g;
+            newPixels[idx + 2] = p.b;
+            newPixels[idx + 3] = p.a;
+          }
+        }
+      } else {
+        // Radial sorting from center
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const maxDist = Math.sqrt(centerX * centerX + centerY * centerY);
+        const numRings = 100;
+        
+        for (let ring = 0; ring < numRings; ring++) {
+          const minDist = (ring / numRings) * maxDist;
+          const maxDistRing = ((ring + 1) / numRings) * maxDist;
+          const pixels = [];
+          
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              const dx = x - centerX;
+              const dy = y - centerY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              if (dist >= minDist && dist < maxDistRing) {
+                const idx = 4 * (x + y * width);
+                const angle = Math.atan2(dy, dx);
+                pixels.push({
+                  x, y, angle,
+                  r: img.pixels[idx],
+                  g: img.pixels[idx + 1],
+                  b: img.pixels[idx + 2],
+                  a: img.pixels[idx + 3],
+                  val: getSortValue(img.pixels[idx], img.pixels[idx + 1], img.pixels[idx + 2]),
+                  sort: shouldSort(img.pixels[idx], img.pixels[idx + 1], img.pixels[idx + 2])
+                });
+              }
+            }
+          }
+          
+          // Sort by angle first
+          pixels.sort((a, b) => a.angle - b.angle);
+          
+          // Find sort regions
+          let sortStart = -1;
+          for (let i = 0; i <= pixels.length; i++) {
+            if (i < pixels.length && pixels[i].sort) {
+              if (sortStart === -1) sortStart = i;
+            } else {
+              if (sortStart !== -1) {
+                const toSort = pixels.slice(sortStart, i);
+                toSort.sort((a, b) => reverse ? b.val - a.val : a.val - b.val);
+                for (let j = 0; j < toSort.length; j++) {
+                  pixels[sortStart + j].r = toSort[j].r;
+                  pixels[sortStart + j].g = toSort[j].g;
+                  pixels[sortStart + j].b = toSort[j].b;
+                  pixels[sortStart + j].a = toSort[j].a;
+                }
+                sortStart = -1;
+              }
+            }
+          }
+          
+          // Write back
+          for (const p of pixels) {
+            const idx = 4 * (p.x + p.y * width);
+            newPixels[idx] = p.r;
+            newPixels[idx + 1] = p.g;
+            newPixels[idx + 2] = p.b;
+            newPixels[idx + 3] = p.a;
+          }
+        }
+      }
+      
+      img.pixels.set(newPixels);
+    }
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float mode;
+uniform float direction;
+uniform float threshold;
+uniform float reverse;
+varying vec2 vTexCoord;
+
+// Pseudo-random function
+float rand(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+// Datamosh-style displacement effect
+void main() {
+  vec2 uv = vTexCoord;
+  vec4 color = texture2D(tex, uv);
+  
+  float brightness = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+  
+  // Create glitchy displacement based on threshold
+  if (brightness > threshold / 255.0) {
+    vec2 displacement = vec2(0.0);
+    
+    if (direction < 0.5) {
+      // Horizontal displacement
+      float shift = rand(vec2(uv.y, 0.5)) * 0.1;
+      displacement.x = shift * (reverse > 0.5 ? -1.0 : 1.0);
+    } else if (direction < 1.5) {
+      // Vertical displacement
+      float shift = rand(vec2(uv.x, 0.5)) * 0.1;
+      displacement.y = shift * (reverse > 0.5 ? -1.0 : 1.0);
+    } else if (direction < 2.5) {
+      // Diagonal displacement
+      float shift = rand(uv) * 0.07;
+      displacement = vec2(shift, shift) * (reverse > 0.5 ? -1.0 : 1.0);
+    } else {
+      // Radial displacement
+      vec2 center = vec2(0.5, 0.5);
+      vec2 dir = normalize(uv - center);
+      float dist = length(uv - center);
+      displacement = dir * rand(vec2(dist, 0.5)) * 0.1;
+    }
+    
+    // Sample with displacement
+    vec2 newUV = uv + displacement;
+    color = texture2D(tex, newUV);
+    
+    // RGB channel separation for datamosh effect
+    if (mode > 0.5) {
+      color.r = texture2D(tex, newUV + vec2(0.01, 0.0)).r;
+      color.b = texture2D(tex, newUV - vec2(0.01, 0.0)).b;
+    }
+  }
+  
+  // Add scanline artifacts
+  float scanline = sin(uv.y * resolution.y * 0.5) * 0.05;
+  color.rgb += scanline;
+  
+  gl_FragColor = color;
+}`
+}, 
+{
+  name: "EFFECT/Relief/Emboss",
+  icon: "⛰️",
+  params: {
+    angle: { value: 135, min: 0, max: 360, step: 45 }, // Light source angle
+    depth: { value: 2, min: 1, max: 10, step: 0.5 }, // Emboss depth/strength
+    grayScale: { value: 1, min: 0, max: 1, step: 1 }, // 0 = color, 1 = grayscale
+    offset: { value: 128, min: 0, max: 255, step: 1 } // Brightness offset (neutral gray)
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    if (x === 0 && y === 0) {
+      const [angle, depth, grayScale, offset] = params;
+      const { width, height } = img;
+      
+      // Convert angle to radians and calculate kernel direction
+      const rad = (angle * Math.PI) / 180;
+      const dx = Math.round(Math.cos(rad));
+      const dy = Math.round(Math.sin(rad));
+      
+      const newPixels = new Uint8ClampedArray(img.pixels.length);
+      const index = (x, y) => 4 * (x + y * width);
+      
+      // Process each pixel
+      for (let py = 0; py < height; py++) {
+        for (let px = 0; px < width; px++) {
+          const idx = index(px, py);
+          
+          // Get current pixel values
+          const r1 = img.pixels[idx];
+          const g1 = img.pixels[idx + 1];
+          const b1 = img.pixels[idx + 2];
+          
+          // Get neighbor pixel in direction of light source
+          const nx = px + dx;
+          const ny = py + dy;
+          
+          let r2, g2, b2;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            const nIdx = index(nx, ny);
+            r2 = img.pixels[nIdx];
+            g2 = img.pixels[nIdx + 1];
+            b2 = img.pixels[nIdx + 2];
+          } else {
+            // Edge handling - use current pixel
+            r2 = r1;
+            g2 = g1;
+            b2 = b1;
+          }
+          
+          // Calculate difference (emboss effect)
+          let diffR = (r1 - r2) * depth + offset;
+          let diffG = (g1 - g2) * depth + offset;
+          let diffB = (b1 - b2) * depth + offset;
+          
+          // Clamp values
+          diffR = Math.max(0, Math.min(255, diffR));
+          diffG = Math.max(0, Math.min(255, diffG));
+          diffB = Math.max(0, Math.min(255, diffB));
+          
+          // Apply grayscale if needed
+          if (grayScale > 0.5) {
+            const gray = (diffR + diffG + diffB) / 3;
+            newPixels[idx] = gray;
+            newPixels[idx + 1] = gray;
+            newPixels[idx + 2] = gray;
+          } else {
+            newPixels[idx] = diffR;
+            newPixels[idx + 1] = diffG;
+            newPixels[idx + 2] = diffB;
+          }
+          newPixels[idx + 3] = img.pixels[idx + 3]; // Keep alpha
+        }
+      }
+      
+      img.pixels.set(newPixels);
+    }
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float angle;
+uniform float depth;
+uniform float grayScale;
+uniform float offset;
+varying vec2 vTexCoord;
+
+void main() {
+  vec2 uv = vTexCoord;
+  
+  // Convert angle to direction vector
+  float rad = radians(angle);
+  vec2 dir = vec2(cos(rad), sin(rad));
+  
+  // Calculate pixel offset based on direction
+  vec2 pixelSize = 1.0 / resolution;
+  vec2 offset1 = dir * pixelSize;
+  
+  // Sample current pixel and neighbor in light direction
+  vec4 color1 = texture2D(tex, uv);
+  vec4 color2 = texture2D(tex, uv + offset1);
+  
+  // Calculate difference (emboss)
+  vec3 diff = (color1.rgb - color2.rgb) * depth + offset / 255.0;
+  
+  // Clamp to valid range
+  diff = clamp(diff, 0.0, 1.0);
+  
+  // Apply grayscale if needed
+  if (grayScale > 0.5) {
+    float gray = (diff.r + diff.g + diff.b) / 3.0;
+    diff = vec3(gray);
+  }
+  
+  gl_FragColor = vec4(diff, color1.a);
+}`
+},
+{
+  name: "GLITCH/CompressionBar/Drag",
+  icon: "💽",
+  params: {
+    barCount: { value: 30, min: 5, max: 100, step: 1 },        // Number of compression bars
+    noise: { value: 0.3, min: 0, max: 1, step: 0.05 },         // Level of bar distortion/randomness
+    blend: { value: 0.6, min: 0, max: 1, step: 0.05 },         // Blends bars into original
+    dragStart: { value: 0.3, min: 0, max: 1, step: 0.05 },     // Where drag effect starts (0-1)
+    orientation: { value: 0, min: 0, max: 1, step: 1 }         // 0 = horizontal, 1 = vertical mode
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    if (x === 0 && y === 0) {
+      const [barCount, noise, blend, dragStart, orientation] = params;
+      const { width, height } = img;
+      const src = img.pixels;
+      const dst = new Uint8ClampedArray(src);
+      const rows = orientation < 0.5 ? height : width;
+      const cols = orientation < 0.5 ? width : height;
+      const barSize = Math.floor(rows / barCount);
+      const dragStartPx = Math.floor(dragStart * rows);
+
+      for (let i = 0; i < barCount; i++) {
+        const barStartPx = i * barSize;
+        
+        // Skip bars that are before dragStart threshold
+        if (barStartPx < dragStartPx) continue;
+        
+        // Choose a reference line or bar for each region, offset by noise
+        const barOfs = Math.round((i + (Math.random() - 0.5) * noise * 2) * barSize);
+        for (let j = 0; j < cols; j++) {
+          let ref;
+          if (orientation < 0.5) { // horizontal bars
+            const row = Math.min(rows - 1, Math.max(0, barOfs));
+            ref = 4 * (j + row * width);
+            for (let k = 0; k < barSize; k++) {
+              const ypix = i * barSize + k;
+              if (ypix >= height) continue;
+              const idx = 4 * (j + ypix * width);
+              dst[idx]     = blend * src[idx]     + (1 - blend) * src[ref];
+              dst[idx + 1] = blend * src[idx + 1] + (1 - blend) * src[ref + 1];
+              dst[idx + 2] = blend * src[idx + 2] + (1 - blend) * src[ref + 2];
+              dst[idx + 3] = src[idx + 3];
+            }
+          } else { // vertical bars
+            const col = Math.min(cols - 1, Math.max(0, barOfs));
+            ref = 4 * (col + j * width);
+            for (let k = 0; k < barSize; k++) {
+              const xpix = i * barSize + k;
+              if (xpix >= width) continue;
+              const idx = 4 * (xpix + j * width);
+              dst[idx]     = blend * src[idx]     + (1 - blend) * src[ref];
+              dst[idx + 1] = blend * src[idx + 1] + (1 - blend) * src[ref + 1];
+              dst[idx + 2] = blend * src[idx + 2] + (1 - blend) * src[ref + 2];
+              dst[idx + 3] = src[idx + 3];
+            }
+          }
+        }
+      }
+      img.pixels.set(dst);
+    }
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float barCount;
+uniform float noise;
+uniform float blend;
+uniform float dragStart;
+uniform float orientation;
+varying vec2 vTexCoord;
+
+void main() {
+  vec2 uv = vTexCoord;
+  float rows = orientation < 0.5 ? resolution.y : resolution.x;
+  float cols = orientation < 0.5 ? resolution.x : resolution.y;
+  float barSize = rows / barCount;
+  
+  float majorCoord = orientation < 0.5 ? uv.y * resolution.y : uv.x * resolution.x;
+  float minorCoord = orientation < 0.5 ? uv.x * resolution.x : uv.y * resolution.y;
+  
+  // Check if we're in the drag zone
+  float dragStartPx = dragStart * rows;
+  
+  if (majorCoord < dragStartPx) {
+    // Keep original image
+    gl_FragColor = texture2D(tex, uv);
+  } else {
+    // Apply drag effect
+    float barIdx = floor(majorCoord / barSize);
+    float noiseOfs = (fract(sin(barIdx * 17.933) * 971.5) - 0.5) * noise * 2.0 * barSize;
+    float refMajor = clamp((barIdx + noiseOfs / barSize) * barSize, 0.0, rows-1.0);
+    
+    vec2 barUV;
+    if (orientation < 0.5)
+      barUV = vec2(minorCoord / resolution.x, refMajor / resolution.y);
+    else
+      barUV = vec2(refMajor / resolution.x, minorCoord / resolution.y);
+    vec4 barColor = texture2D(tex, barUV);
+    vec4 origColor = texture2D(tex, uv);
+    gl_FragColor = mix(barColor, origColor, blend);
+  }
+}`
+},
+{
+  name: "EFFECT/Mirror/Kaleidoscope",
+  icon: "🔮",
+  params: {
+    segments: { value: 6, min: 2, max: 24, step: 1 },          // Number of mirror segments
+    angle: { value: 0, min: 0, max: 360, step: 15 },           // Rotation angle of the pattern
+    centerX: { value: 0.5, min: 0, max: 1, step: 0.05 },       // Center X position (0-1)
+    centerY: { value: 0.5, min: 0, max: 1, step: 0.05 },       // Center Y position (0-1)
+    zoom: { value: 1, min: 0.1, max: 3, step: 0.1 }            // Zoom level
+  },
+  processFunc: (img, r, g, b, a, x, y, ...params) => {
+    if (x === 0 && y === 0) {
+      const [segments, angle, centerX, centerY, zoom] = params;
+      const { width, height } = img;
+      const src = new Uint8ClampedArray(img.pixels);
+      const dst = new Uint8ClampedArray(img.pixels.length);
+      
+      const cx = centerX * width;
+      const cy = centerY * height;
+      const rotRad = (angle * Math.PI) / 180;
+      const segmentAngle = (2 * Math.PI) / segments;
+      
+      for (let py = 0; py < height; py++) {
+        for (let px = 0; px < width; px++) {
+          // Convert to coordinates relative to center
+          let dx = px - cx;
+          let dy = py - cy;
+          
+          // Apply zoom
+          dx /= zoom;
+          dy /= zoom;
+          
+          // Convert to polar coordinates
+          let dist = Math.sqrt(dx * dx + dy * dy);
+          let ang = Math.atan2(dy, dx) - rotRad;
+          
+          // Normalize angle to 0-2π
+          ang = ((ang % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI);
+          
+          // Find which segment we're in
+          const segmentIdx = Math.floor(ang / segmentAngle);
+          
+          // Get angle within segment (0 to segmentAngle)
+          let segmentAng = ang - segmentIdx * segmentAngle;
+          
+          // Mirror every other segment
+          if (segmentIdx % 2 === 1) {
+            segmentAng = segmentAngle - segmentAng;
+          }
+          
+          // Convert back to cartesian (using only first segment's angle)
+          const srcAng = segmentAng + rotRad;
+          const srcX = cx + dist * Math.cos(srcAng);
+          const srcY = cy + dist * Math.sin(srcAng);
+          
+          // Sample source pixel with bounds checking
+          const dstIdx = 4 * (px + py * width);
+          
+          if (srcX >= 0 && srcX < width - 1 && srcY >= 0 && srcY < height - 1) {
+            // Bilinear interpolation
+            const x0 = Math.floor(srcX);
+            const x1 = Math.min(x0 + 1, width - 1);
+            const y0 = Math.floor(srcY);
+            const y1 = Math.min(y0 + 1, height - 1);
+            
+            const fx = srcX - x0;
+            const fy = srcY - y0;
+            
+            const idx00 = 4 * (x0 + y0 * width);
+            const idx10 = 4 * (x1 + y0 * width);
+            const idx01 = 4 * (x0 + y1 * width);
+            const idx11 = 4 * (x1 + y1 * width);
+            
+            for (let c = 0; c < 4; c++) {
+              const v00 = src[idx00 + c];
+              const v10 = src[idx10 + c];
+              const v01 = src[idx01 + c];
+              const v11 = src[idx11 + c];
+              
+              const v0 = v00 * (1 - fx) + v10 * fx;
+              const v1 = v01 * (1 - fx) + v11 * fx;
+              const v = v0 * (1 - fy) + v1 * fy;
+              
+              dst[dstIdx + c] = Math.round(v);
+            }
+          } else {
+            // Out of bounds - use black or edge color
+            dst[dstIdx] = 0;
+            dst[dstIdx + 1] = 0;
+            dst[dstIdx + 2] = 0;
+            dst[dstIdx + 3] = 255;
+          }
+        }
+      }
+      
+      img.pixels.set(dst);
+    }
+  },
+  shader: `precision mediump float;
+uniform sampler2D tex;
+uniform vec2 resolution;
+uniform float segments;
+uniform float angle;
+uniform float centerX;
+uniform float centerY;
+uniform float zoom;
+varying vec2 vTexCoord;
+
+const float PI = 3.14159265359;
+const float TWO_PI = 6.28318530718;
+
+void main() {
+  vec2 uv = vTexCoord;
+  vec2 center = vec2(centerX, centerY);
+  
+  // Convert to coordinates relative to center
+  vec2 pos = (uv - center) * resolution;
+  
+  // Apply zoom
+  pos /= zoom;
+  
+  // Convert to polar coordinates
+  float dist = length(pos);
+  float ang = atan(pos.y, pos.x) - radians(angle);
+  
+  // Normalize angle to 0-2π
+  ang = mod(mod(ang, TWO_PI) + TWO_PI, TWO_PI);
+  
+  // Calculate segment angle
+  float segmentAngle = TWO_PI / segments;
+  
+  // Find which segment we're in
+  float segmentIdx = floor(ang / segmentAngle);
+  
+  // Get angle within segment
+  float segmentAng = ang - segmentIdx * segmentAngle;
+  
+  // Mirror every other segment
+  if (mod(segmentIdx, 2.0) > 0.5) {
+    segmentAng = segmentAngle - segmentAng;
+  }
+  
+  // Convert back to cartesian (using only first segment's angle)
+  float srcAng = segmentAng + radians(angle);
+  vec2 srcPos = vec2(cos(srcAng), sin(srcAng)) * dist;
+  
+  // Convert back to UV coordinates
+  vec2 srcUV = center + srcPos / resolution;
+  
+  // Sample with wrapping or clamping
+  if (srcUV.x >= 0.0 && srcUV.x <= 1.0 && srcUV.y >= 0.0 && srcUV.y <= 1.0) {
+    gl_FragColor = texture2D(tex, srcUV);
+  } else {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+  }
+}`
 }
 ];
 //export const configFilter = [{

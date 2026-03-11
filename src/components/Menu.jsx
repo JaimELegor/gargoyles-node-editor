@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Tab from "./Tabs";
 import Tabs from "./Tabs";
 import Window from "./Window";
@@ -10,21 +11,44 @@ import DownloadButton from "./ImageDownloader";
 import '../styles/Menu.css';
 import ImportNodes from "./ImportNodes";
 import ExportNodes from "./ExportNodes";
+import CodeViewer from "./CodeViewer";
+import Store from "./Store";
+import FloatingWindow from "./FloatingWindow";
+
 
 
 export default function Menu(){
     const { isActive } = useActiveFilter();
     const { setSelectedNode } = useNode();
     const { theme } = useTheme();  
+    const [ toggleCodeV, setToggleCodeV ] = useState(false); 
     
     const logoImage = theme === 'dark' ? '/logo-dark.png' : '/logo2.png';
+
+    const [ showStore, setShowStore ] = useState(false);
     
     return (
     <div className="menu-parent"> 
         {isActive ? (
             <>
             <Window title="model.glb" close={() => setSelectedNode(null)}>
-                <ThreeScene />
+                    <div className='editor'>
+                          <div className='visualizer'>
+                            <div className="toggle-code-viewer" style={{textAlign: 'right'}}>
+                              <p className="vc-btn" 
+                                 onClick={() => setToggleCodeV(!toggleCodeV)} >
+                                    {"<<View Code>>"}
+                                </p>
+                            </div>
+                            <ThreeScene />
+                          </div>
+                      {toggleCodeV && (
+                        
+                            <CodeViewer />
+                        
+                      )}
+                    </div>
+                
             </Window>
         </>
         
@@ -46,8 +70,21 @@ export default function Menu(){
             <Tab label="About">
                 <h3>Website created and designed by DiogenesTheDog.</h3>
             </Tab>
+            
             </Tabs>
+
+            <button style={{width: "100%"}} onClick={() => setShowStore(!showStore)}>Gargoyles.Store</button>
         </Window>
+        )}
+
+        {showStore && (
+        <FloatingWindow
+            open={showStore}
+            onClose={() => setShowStore(false)}
+            title="Store"
+        >
+            <Store />
+        </FloatingWindow>
         )}
     </div>
     );

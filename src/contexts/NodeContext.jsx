@@ -13,23 +13,21 @@ export function NodeProvider({ children }) {
   const [order, setOrder] = useState([]);
 
   useEffect(() => {
-    // If there are edges, let topSort decide
     if (edges.size > 0) {
       const sorted = topSort(edges);
       if (sorted) {
-        setOrder(sorted);
+        const sortedLabels = sorted
+          .map(id => nodes.find(n => n.id === id)?.label)
+          .filter(Boolean);
+        setOrder(sortedLabels);
         return;
       }
     }
 
-    // If no edges, fallback to single-node mode
     if (selectedNode) {
-     // setSingleSelected(selectedNode);
       setOrder([selectedNode]);
-    } //else {
-      //setOrder([]);
-      //}
-  }, [edges, selectedNode]);
+    }
+  }, [edges, selectedNode, nodes]);
 
   const topSort = (edges) => {
       // Parse edges into array of objects

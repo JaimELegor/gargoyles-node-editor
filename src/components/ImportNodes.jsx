@@ -39,7 +39,7 @@ export default function ImportNodes(){
             style={{ display: "none" }}
             onChange={handleImport}
         />
-            Import Gargoyles
+            Manifold.Import
         </button>
     );
 }

@@ -17,7 +17,7 @@ body {
   flex: 1;
   flex-direction: row;
   margin-top: 50px;
-
+  gap: 16px;
 }
 
 .sub-main {
@@ -27,20 +27,31 @@ body {
   margin: 16px auto; 
   display: flex;
   justify-content: center; 
+  
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  width: 350px;
+  height: 85vh;
+  margin: 16px;
+  gap: 60px;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .edit-mode-holder {
   position: relative;
-  top: 30px;
-  left: -30px;
+  top: 0;        /* CHANGED: Remove offset */
+  left: 0;       /* CHANGED: Remove offset */
   z-index: 10000;
-
+  flex-shrink: 0;
+  padding: 16px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  justify-content: center;
+  
 }
-
-
-
-
-
-
-
 

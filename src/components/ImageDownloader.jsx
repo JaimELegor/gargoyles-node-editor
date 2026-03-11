@@ -12,7 +12,7 @@ function DownloadButton({ filename = "download.png" }) {
 
   return (
     <button disabled={!mainCanvas} onClick={handleDownload}>
-      Download Image
+      Image.Download
     </button>
   );
 }

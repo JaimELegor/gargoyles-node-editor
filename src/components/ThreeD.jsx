@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Slider from "./Slider";
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -7,11 +7,13 @@ import { useNode } from '../contexts/NodeContext';
 import { useImage } from '../contexts/ImageContext';
 import { useFilter } from '../contexts/FilterContext';
 import '../styles/ThreeD.css';
+import CodeViewer from './CodeViewer';
 
 export default function ThreeScene() {
   const { selectedNode, setSelectedNode, setLastSelected } = useNode();
   const { monitorCanvas } = useImage();
   const { filterValues, sliderParams, setFilterValues } = useFilter();
+  
   const mountRef = useRef(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
 
@@ -136,28 +138,33 @@ export default function ThreeScene() {
   }, [monitorCanvas]);
 
   return (
-    <div className="model">
-      <div ref={mountRef} style={{ width: '30vh', height: '30vh' }} />
-      {Object.entries(sliderParams).map(([paramName, paramData]) => (
-        <Slider
-          key={paramName}
-          label={paramName}
-          min={paramData.min}
-          max={paramData.max}
-          step={paramData.step}
-          value={filterValues[selectedNode][paramName]}
-          onChange={(newValue) => {
-            setFilterValues(prev => ({
-              ...prev,
-              [selectedNode]: {
-                ...prev[selectedNode],
-                [paramName]: newValue,
-              },
-            }));
-          }}
-        />
-      ))}
-      <button onClick={() => { setLastSelected(selectedNode); setSelectedNode(null); }}>Apply</button>
-    </div>
+    <>
+                                  <div className="model">
+                                    <div ref={mountRef} style={{ width: '30vh', height: '30vh' }} />
+                                    {Object.entries(sliderParams).map(([paramName, paramData]) => (
+                                      <Slider
+                                        key={paramName}
+                                        label={paramName}
+                                        min={paramData.min}
+                                        max={paramData.max}
+                                        step={paramData.step}
+                                        value={filterValues[selectedNode][paramName]}
+                                        onChange={(newValue) => {
+                                          setFilterValues(prev => ({
+                                            ...prev,
+                                            [selectedNode]: {
+                                              ...prev[selectedNode],
+                                              [paramName]: newValue,
+                                            },
+                                          }));
+                                        }}
+                                      />
+                                    ))}
+                                    <button onClick={() => { setLastSelected(selectedNode); setSelectedNode(null); }}>Apply</button>
+                                </div>
+                              
+
+    </>
+
   );
 }

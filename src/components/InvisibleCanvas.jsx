@@ -5,6 +5,7 @@ import { useImage } from "../contexts/ImageContext";
 import { useFilter } from "../contexts/FilterContext";
 import { useNode } from "../contexts/NodeContext";
 import { useMode } from "../contexts/ModeContext";
+import { useRef } from "react";
 
 export default function CanvasPreview() {
   const { imgDataURL, setPreviewCanvas, setMonitorCanvas } = useImage();
@@ -12,32 +13,38 @@ export default function CanvasPreview() {
   const { selectedNode } = useNode();
   const { cpuFlag } = useMode();
 
+  // Freeze last valid filter so canvas doesn't clear before toBlob fires
+  const lastFilterRef = useRef(filterSingle);
+  if (filterSingle) lastFilterRef.current = filterSingle;
+  const frozenFilter = lastFilterRef.current;
+
+  const lastNodeRef = useRef(selectedNode);
+  if (selectedNode) lastNodeRef.current = selectedNode;
+  const frozenNode = lastNodeRef.current;
+
   if (!imgDataURL) return null;
 
   return (
     <div style={{ display: "none" }}>
-              
-                <ReactP5Wrapper 
-                    name={selectedNode} 
-                    paramsMap={filterValues} 
-                    filter={filterSingle} 
-                    imgSrc={imgDataURL} 
-                    onCanvasImage={(canvas) => setMonitorCanvas(canvas)} 
-                    sketch={monitorSketch} 
-                    cpuFlag = {cpuFlag}
-                />
-
-                <ReactP5Wrapper
-                    key={imgDataURL + selectedNode}
-                    name={selectedNode} 
-                    paramsMap={filterValues} 
-                    filter={filterSingle} 
-                    imgSrc={imgDataURL} 
-                    onCanvasImage={(canvas) => setPreviewCanvas(canvas)} //here's where it gets stored
-                    sketch={invisibleSketch} 
-                    cpuFlag = {cpuFlag}
-                />
-             
-            </div>       
-  ); 
+      <ReactP5Wrapper
+        name={frozenNode}
+        paramsMap={filterValues}
+        filter={frozenFilter}   // ← never goes null mid-frame
+        imgSrc={imgDataURL}
+        onCanvasImage={(canvas) => setMonitorCanvas(canvas)}
+        sketch={monitorSketch}
+        cpuFlag={cpuFlag}
+      />
+      <ReactP5Wrapper
+        key={imgDataURL + frozenNode}
+        name={frozenNode}
+        paramsMap={filterValues}
+        filter={frozenFilter}   // ← same here
+        imgSrc={imgDataURL}
+        onCanvasImage={(canvas) => setPreviewCanvas(canvas)}
+        sketch={invisibleSketch}
+        cpuFlag={cpuFlag}
+      />
+    </div>
+  );
 }
