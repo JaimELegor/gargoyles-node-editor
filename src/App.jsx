@@ -18,9 +18,10 @@ import { useActiveFilter } from "./hooks/useActiveState";
 import { AuthProvider } from './contexts/AuthContext';
 import GithubAuthButton from './components/GitHubAuthBtn';
 import { FilterRegistryProvider } from './contexts/FilterRegistryContext';
+import { useFirstVisit } from './hooks/useFirstVisit';
 
 function AppContent() {
-
+  useFirstVisit();
   return (
     <>
      {/* <TopBar /> */}
