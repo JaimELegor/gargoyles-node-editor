@@ -24,7 +24,7 @@ function AppContent() {
   useFirstVisit();
   return (
     <>
-     {/* <TopBar /> */}
+     <TopBar />
       <div className="main">     
         <Menu />
         <CPUFlagButton />

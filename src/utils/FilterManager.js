@@ -1,20 +1,19 @@
 import { CPUBackend } from "./CPUBackend";
-import { GPUBackend } from "./GPUBackend";
+
 export class FilterManager {
   constructor() {
-    this.original = null;       // the loaded original image
-    this.mainFiltered = null;   // image with full filter chain
-    this.singleFiltered = null; // image with one selected filter
+    this.original = null;
+    this.mainFiltered = null;
+    this.singleFiltered = null;
     this.appliedFlag = "";
-
-    // cache: { key -> p5.Image }
     this.cache = new Map();
     this.backend = new CPUBackend();
+    this.renderVersion = 0;
   }
 
   setOriginal(img) {
     this.original = img;
-    this.cache.clear(); // reset cache if original changes
+    this.cache.clear();
   }
 
   setBackend(backend) {
@@ -22,66 +21,92 @@ export class FilterManager {
     this.cache.clear();
   }
 
-  getAppliedFlag(){
-    return this.appliedFlag;
+  getAppliedFlag() { return this.appliedFlag; }
+
+  makeKeyForPipeline(filters, paramsMap) {
+    return JSON.stringify({ type: "pipeline", backend: this.backend.name,
+      filters: filters.map(f => f.name), params: paramsMap });
   }
 
-makeKeyForPipeline(filters, paramsMap) {
-    return JSON.stringify({
-      type: "pipeline",
-      backend: this.backend.name,       
-      filters: filters.map(f => f.name),
-      params: paramsMap
-    });
-}
-
-makeKeyForSingle(filterName, paramsMap) {
-    return JSON.stringify({
-      type: "single",
-      backend: this.backend.name,       
-      filter: filterName,
-      params: paramsMap?.[filterName] || {}
-    });
-}
+  makeKeyForSingle(filterName, paramsMap) {
+    return JSON.stringify({ type: "single", backend: this.backend.name,
+      filter: filterName, params: paramsMap?.[filterName] || {} });
+  }
 
   cloneImage(img) {
     let clone = img.get();
     clone.loadPixels();
     return clone;
   }
-  
-  applyAll(filters, paramsMap, { force = false } = {}) {
-    if (!this.original) return null;
 
+  
+  snapshotPixels(img) {
+    img.loadPixels();
+    return new Uint8ClampedArray(img.pixels);
+  }
+
+
+  fromSnapshot(snapshot) {
+    const fresh = this.cloneImage(this.original);
+    fresh.loadPixels();
+    fresh.pixels.set(snapshot);
+    fresh.updatePixels();
+    return fresh;
+  }
+
+  async applyAll(filters, paramsMap, { force = false } = {}) {
+    if (!this.original) return null;
+    this.renderVersion++;               // ⭐ new render started
+    const version = this.renderVersion;
     const key = this.makeKeyForPipeline(filters, paramsMap);
 
-    if (!force && this.cache.has(key)) {
-      this.mainFiltered = this.cloneImage(this.cache.get(key));
+    if (!filters || filters.length === 0) {
+      this.mainFiltered = this.cloneImage(this.original);
       return this.mainFiltered;
     }
 
-    const result = this.backend.runPipeline(this.original, filters, paramsMap);
-    this.cache.set(key, result);
+    if (!force && this.cache.has(key)) {
+      this.mainFiltered = this.fromSnapshot(this.cache.get(key));
+      return this.mainFiltered;
+    }
+
+    const freshImg = this.cloneImage(this.original);
+    const result = await Promise.resolve(
+      this.backend.runPipeline(freshImg, filters, paramsMap)
+    );
+    if (version !== this.renderVersion) return this.mainFiltered;
+    if (!result) return this.mainFiltered;
+
+    this.cache.set(key, this.snapshotPixels(result));
     this.mainFiltered = this.cloneImage(result);
     this.appliedFlag = this.backend.name;
     return this.mainFiltered;
   }
 
-  applySingle(filter, name, paramsMap) {
+  async applySingle(filter, name, paramsMap, { force = false } = {}) {
     if (!this.original) return null;
-
+    this.renderVersion++;
+    const version = this.renderVersion;
     const key = this.makeKeyForSingle(name, paramsMap);
-    if (this.cache.has(key)) {
-      this.singleFiltered = this.cloneImage(this.cache.get(key));
+
+    if (!force && this.cache.has(key)) {
+      this.singleFiltered = this.fromSnapshot(this.cache.get(key));
       return this.singleFiltered;
     }
 
-    const result = this.backend.runFilter(this.original, filter, name, paramsMap);
-    this.cache.set(key, result);
+    const freshImg = this.cloneImage(this.original);
+    const result = await Promise.resolve(
+      this.backend.runFilter(freshImg, filter, name, paramsMap)
+    );
+
+    if (version !== this.renderVersion) return this.singleFiltered;
+
+    if (!result) return this.singleFiltered;
+    this.cache.set(key, this.snapshotPixels(result));
     this.singleFiltered = this.cloneImage(result);
     this.appliedFlag = this.backend.name;
     return this.singleFiltered;
-  } 
+  }
 }
 
 export const filterManager = new FilterManager();

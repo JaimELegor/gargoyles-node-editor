@@ -9,6 +9,7 @@ export default function NodeEditor() {
   const svgRef = useRef();
   const editorRef = useRef({});
   const nodeRefs = useRef({});
+  const edgeLinesRef = useRef({});  
 
   const { nodePreviews, selectedNode,
           setSelectedNode, nodes,
@@ -16,59 +17,13 @@ export default function NodeEditor() {
           addEdges, removeEdge } = useNode();
 
   const { imgDataURL } = useImage();
-  //const modes = ["zoom", "move", "edit", "link"];
   const { activeMode, setActiveMode } = useMode();
-
 
   const [connectingFrom, setConnectingFrom] = useState(null);
   const [mousePos, setMousePos] = useState(null);
   const [zoom, setZoom] = useState(1);
-  const [dragging, setDragging] = useState(null);
 
-  // ── Original move logic (unchanged) ──
-  const handleMouseDown = (e, id) => {
-    if (activeMode !== "move") return;
-    const nodeIndex = nodes.findIndex((n) => n.id === id);
-    if (nodeIndex === -1) return;
-
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startPos = { x: nodes[nodeIndex].x, y: nodes[nodeIndex].y };
-
-    const onMouseMove = (e) => {
-      const dx = (e.clientX - startX) / zoom;
-      const dy = (e.clientY - startY) / zoom;
-      const newX = startPos.x + dx;
-      const newY = startPos.y + dy;
-      const nodeEl = nodeRefs.current[id];
-      if (nodeEl) {
-        nodeEl.style.left = `${newX}px`;
-        nodeEl.style.top = `${newY}px`;
-      }
-      setDragging({ id, x: newX, y: newY });
-    };
-
-    const onMouseUp = (e) => {
-      const dx = (e.clientX - startX) / zoom;
-      const dy = (e.clientY - startY) / zoom;
-      const updatedNodes = [...nodes];
-      updatedNodes[nodeIndex] = {
-        ...updatedNodes[nodeIndex],
-        x: startPos.x + dx,
-        y: startPos.y + dy,
-      };
-      if (setNodes) setNodes(updatedNodes);
-      setDragging(null);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  };
-
-  // ── NEW: Move handle drag (works independently of activeMode) ──
-  const handleMoveHandleMouseDown = (e, id) => {
+  const startDrag = (e, id) => {
     e.stopPropagation();
     const nodeIndex = nodes.findIndex((n) => n.id === id);
     if (nodeIndex === -1) return;
@@ -76,18 +31,34 @@ export default function NodeEditor() {
     const startX = e.clientX;
     const startY = e.clientY;
     const startPos = { x: nodes[nodeIndex].x, y: nodes[nodeIndex].y };
+    const nodeEl = nodeRefs.current[id];
 
     const onMouseMove = (e) => {
       const dx = (e.clientX - startX) / zoom;
       const dy = (e.clientY - startY) / zoom;
       const newX = startPos.x + dx;
       const newY = startPos.y + dy;
-      const nodeEl = nodeRefs.current[id];
+
+      // ✅ Pure DOM mutation — zero React re-renders
       if (nodeEl) {
         nodeEl.style.left = `${newX}px`;
         nodeEl.style.top = `${newY}px`;
       }
-      setDragging({ id, x: newX, y: newY });
+
+      // ✅ Update connected edges directly via SVG refs
+      Array.from(edges).forEach((edge, i) => {
+        const parsed = JSON.parse(edge);
+        const line = edgeLinesRef.current[i];
+        if (!line) return;
+        if (parsed.from === id) {
+          line.setAttribute("x1", newX + 195);
+          line.setAttribute("y1", newY + 230);
+        }
+        if (parsed.to === id) {
+          line.setAttribute("x2", newX + 195);
+          line.setAttribute("y2", newY + 230);
+        }
+      });
     };
 
     const onMouseUp = (e) => {
@@ -99,8 +70,7 @@ export default function NodeEditor() {
         x: startPos.x + dx,
         y: startPos.y + dy,
       };
-      if (setNodes) setNodes(updatedNodes);
-      setDragging(null);
+      setNodes(updatedNodes); // ✅ Only one setState, on mouseup
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
@@ -109,7 +79,6 @@ export default function NodeEditor() {
     window.addEventListener("mouseup", onMouseUp);
   };
 
-  // ── NEW: Link handle ──
   const handleLinkHandle = (e, nodeId) => {
     e.stopPropagation();
     if (connectingFrom === nodeId) {
@@ -124,7 +93,6 @@ export default function NodeEditor() {
     }
   };
 
-  // ── NEW: Edit handle ──
   const handleEditHandle = (e, nodeLabel) => {
     e.stopPropagation();
     if (imgDataURL) setSelectedNode(nodeLabel);
@@ -148,13 +116,15 @@ export default function NodeEditor() {
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [connectingFrom]);
 
   useEffect(() => {
     const editor = document.getElementById("editor");
     if (!editor) return;
-
     const handleWheel = (e) => {
       if (activeMode !== "zoom") return;
       e.preventDefault();
@@ -162,11 +132,8 @@ export default function NodeEditor() {
       const delta = e.deltaY > 0 ? -step : step;
       setZoom((prev) => Math.min(Math.max(prev + delta, 0.25), 1.5));
     };
-
     editor.addEventListener("wheel", handleWheel, { passive: false });
-    return () => {
-      editor.removeEventListener("wheel", handleWheel);
-    };
+    return () => editor.removeEventListener("wheel", handleWheel);
   }, [activeMode]);
 
   return (
@@ -208,7 +175,7 @@ export default function NodeEditor() {
                   ref={(el) => {
                     if (el) nodeRefs.current[node.id] = el;
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, node.id)}
+                  onMouseDown={(e) => activeMode === "move" && startDrag(e, node.id)}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (activeMode === "edit") {
@@ -227,16 +194,14 @@ export default function NodeEditor() {
                     }
                   }}
                 >
-                  {/* ── NEW: Hover handles (CSS controls visibility) ── */}
                   <div className="node-handles">
                     <div
                       className="node-handle node-handle--move"
                       title="Move node"
                       onMouseDown={(e) => {
-                          setActiveMode("move");
-                          handleMoveHandleMouseDown(e, node.id);
-                        }
-                      }
+                        setActiveMode("move");
+                        startDrag(e, node.id);
+                      }}
                     >
                       ✥
                     </div>
@@ -244,10 +209,9 @@ export default function NodeEditor() {
                       className={`node-handle node-handle--link ${isConnecting ? "node-handle--active" : ""}`}
                       title={isConnecting ? "Cancel link" : "Link from this node"}
                       onClick={(e) => {
-                          setActiveMode("link");
-                          handleLinkHandle(e, node.id);
-                        }
-                      }
+                        setActiveMode("link");
+                        handleLinkHandle(e, node.id);
+                      }}
                     >
                       ⇢
                     </div>
@@ -255,46 +219,45 @@ export default function NodeEditor() {
                       className={`node-handle node-handle--edit ${isEditing ? "node-handle--active" : ""}`}
                       title="Edit node"
                       onClick={(e) => {
-                          setActiveMode("edit");
-                          handleEditHandle(e, node.label);
-                      }
-                    }
+                        setActiveMode("edit");
+                        handleEditHandle(e, node.label);
+                      }}
                     >
                       ✎
                     </div>
                   </div>
 
                   <div className="frame-container">
-                  <div className="image-wrapper">
-                    {selectedNode === node.label || !preview?.url ? (
-                      <div className="static">
-                        {!imgDataURL && (
-                          <p className="static-placeholder">submit<br/>image</p>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        <img
-                          className={`canvas-slot ${activeMode === "move" ? "disable-cursor" : ""}`}
-                          src={preview.url}
-                          alt={node.label}
-                          draggable={false}
-                        />
-                        {(activeMode === "edit" || activeMode === "link") && (
-                          <div className="hover-overlay" style={{ cursor: (activeMode === "edit" || activeMode === "link") ? "pointer" : "default" }}>
-                            <svg style={{ display: "none" }}>
-                              <filter id="text-blur">
-                                <feGaussianBlur stdDeviation="1.75" />
-                              </filter>
-                            </svg>
-                            <p style={{ filter: "url(#text-blur)", color: "white", textAlign: "center" }}>
-                              SELECT <br /> GARGOYLE
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+                    <div className="image-wrapper">
+                      {selectedNode === node.label || !preview?.url ? (
+                        <div className="static">
+                          {!imgDataURL && (
+                            <p className="static-placeholder">submit<br/>image</p>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <img
+                            className={`canvas-slot ${activeMode === "move" ? "disable-cursor" : ""}`}
+                            src={preview.url}
+                            alt={node.label}
+                            draggable={false}
+                          />
+                          {(activeMode === "edit" || activeMode === "link") && (
+                            <div className="hover-overlay" style={{ cursor: (activeMode === "edit" || activeMode === "link") ? "pointer" : "default" }}>
+                              <svg style={{ display: "none" }}>
+                                <filter id="text-blur">
+                                  <feGaussianBlur stdDeviation="1.75" />
+                                </filter>
+                              </svg>
+                              <p style={{ filter: "url(#text-blur)", color: "white", textAlign: "center" }}>
+                                SELECT <br /> GARGOYLE
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                     <img src="monitor.png" className="frame-overlay" alt="Frame" />
                   </div>
                   <p>{node.label}</p>
@@ -324,16 +287,12 @@ export default function NodeEditor() {
                 const to = getNodeById(parsed.to);
                 if (!from || !to) return null;
 
-                const fromX = dragging?.id === from.id ? dragging.x : from.x;
-                const fromY = dragging?.id === from.id ? dragging.y : from.y;
-                const toX   = dragging?.id === to.id   ? dragging.x : to.x;
-                const toY   = dragging?.id === to.id   ? dragging.y : to.y;
-
                 return (
                   <line
                     key={i}
-                    x1={fromX + 195} y1={fromY + 230}
-                    x2={toX + 195}   y2={toY + 230}
+                    ref={(el) => { if (el) edgeLinesRef.current[i] = el; }} 
+                    x1={from.x + 195} y1={from.y + 230}
+                    x2={to.x + 195}   y2={to.y + 230}
                     className="edge-line"
                     onClick={() => removeEdge(edge)}
                   />

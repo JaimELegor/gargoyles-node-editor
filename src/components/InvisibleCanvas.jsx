@@ -6,12 +6,14 @@ import { useFilter } from "../contexts/FilterContext";
 import { useNode } from "../contexts/NodeContext";
 import { useMode } from "../contexts/ModeContext";
 import { useRef } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function CanvasPreview() {
   const { imgDataURL, setPreviewCanvas, setMonitorCanvas } = useImage();
   const { filterValues, filterSingle } = useFilter();
   const { selectedNode } = useNode();
   const { cpuFlag } = useMode();
+  const { theme } = useTheme();
 
   // Freeze last valid filter so canvas doesn't clear before toBlob fires
   const lastFilterRef = useRef(filterSingle);
@@ -26,17 +28,19 @@ export default function CanvasPreview() {
 
   return (
     <div style={{ display: "none" }}>
+      {theme === "neon" &&
+          <ReactP5Wrapper
+            name={frozenNode}
+            paramsMap={filterValues}
+            filter={frozenFilter}   // ← never goes null mid-frame
+            imgSrc={imgDataURL}
+            onCanvasImage={(canvas) => setMonitorCanvas(canvas)}
+            sketch={monitorSketch}
+            cpuFlag={cpuFlag}
+          />
+      }
       <ReactP5Wrapper
-        name={frozenNode}
-        paramsMap={filterValues}
-        filter={frozenFilter}   // ← never goes null mid-frame
-        imgSrc={imgDataURL}
-        onCanvasImage={(canvas) => setMonitorCanvas(canvas)}
-        sketch={monitorSketch}
-        cpuFlag={cpuFlag}
-      />
-      <ReactP5Wrapper
-        key={imgDataURL + frozenNode}
+        key={imgDataURL}
         name={frozenNode}
         paramsMap={filterValues}
         filter={frozenFilter}   // ← same here

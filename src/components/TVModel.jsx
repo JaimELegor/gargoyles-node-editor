@@ -1,0 +1,114 @@
+import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { TextureLoader } from 'three';
+
+export default function TVModel({ monitorCanvas }) {
+  const mountRef = useRef(null);
+  const mousePosRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+
+    const width = mountRef.current.clientHeight;
+    const height = mountRef.current.clientHeight;
+
+    const scene = new THREE.Scene();
+
+    const textureLoader = new TextureLoader();
+    textureLoader.load('clouds.jpg', (texture) => {
+      scene.background = texture;
+    });
+
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 1000);
+    camera.position.z = 1;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(width, height);
+    mountRef.current.appendChild(renderer.domElement);
+
+    let model;
+    let texture;
+    const loader = new GLTFLoader();
+    loader.load('tv.glb', (gltf) => {
+      model = gltf.scene;
+      if (monitorCanvas) {
+        texture = new THREE.CanvasTexture(monitorCanvas);
+        model.traverse((child) => {
+          if (child.isMesh && child.name === "TVLow") {
+            child.material.map = texture;
+            child.material.needsUpdate = true;
+          }
+        });
+      }
+      model.rotation.y = Math.PI;
+      scene.add(model);
+    });
+
+    const light = new THREE.DirectionalLight(0xFFFFFF, 2);
+    light.position.set(2, 2, 2);
+    scene.add(light);
+
+    const handleMouseMove = (e) => {
+      if (!mountRef.current) return;
+      const rect = mountRef.current.getBoundingClientRect();
+      mousePosRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+
+    let targetX = 0, targetY = 0;
+    let animationFrameId;
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      if (model) {
+        const mouse = mousePosRef.current;
+        const normX = (mouse.x / width * 0.8) * 2 - 1;
+        const normY = (mouse.y / height * 0.8) * 2 - 1;
+        targetY = Math.PI + normX * 0.8;
+        targetX = normY * 0.8;
+        model.rotation.y += (targetY - model.rotation.y) * 0.1;
+        model.rotation.x += (targetX - model.rotation.x) * 0.1;
+      }
+      if (texture) texture.needsUpdate = true;
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    const handleResize = () => {
+      if (!mountRef.current) return;
+      const w = mountRef.current.clientHeight;
+      const h = mountRef.current.clientHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+      if (model) {
+        model.traverse((child) => {
+          if (child.isMesh) {
+            if (child.material.map) child.material.map.dispose();
+            child.material.dispose();
+            child.geometry.dispose();
+          }
+        });
+        scene.remove(model);
+        model = null;
+      }
+      if (texture) texture.dispose();
+      renderer.dispose();
+      if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+    };
+  }, [monitorCanvas]);
+
+  return <div ref={mountRef} style={{ width: '30vh', height: '30vh' }} />;
+}

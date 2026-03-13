@@ -28,6 +28,7 @@ export function FilterProvider({ children }) {
       return {
         name,
         func: (...args) => filter.processFunc(...args),
+        processFunc: filter.processFunc,
         shader: filter.shader,
       };
     }).filter(Boolean);
