@@ -14,7 +14,7 @@ export function FilterProvider({ children }) {
   const [sliderParams, setSliderParams] = useState(null);
   
 
-  const { selectedNode, nodePreviews, setNodePreviews,
+  const { nodes, selectedNode, nodePreviews, setNodePreviews,
           lastSelected, setLastSelected, edges, setEdges,
           order, setOrder, singleSelected, setSingleSelected } = useNode();
   const { previewCanvas, previewCanvasRef } = useImage();
@@ -37,8 +37,7 @@ export function FilterProvider({ children }) {
       const map = new Map(prev.map(p => [p.name, p]));
       return order.map((name) => map.get(name) ?? { name, blob: null });
     });
-    console.log(order);
-  }, [order, ready, registry]); // re-runs when registry changes live
+  }, [nodes, order, ready, registry]); // re-runs when registry changes live
 
   useEffect(() => {
     if (!ready) return;
@@ -60,10 +59,17 @@ export function FilterProvider({ children }) {
 
     // Use the ref — guaranteed to be the LAST rendered frame, not post-clear
     const canvas = previewCanvasRef.current;
-    if (!canvas) return;
-
-    canvas.toBlob((blob) => {
+    if (!canvas) { console.log("[FilterContext] no canvas!"); return; }
+   
+    // Freeze pixels synchronously into an offscreen copy before p5 can redraw
+  
+    const offscreen = document.createElement("canvas");
+    offscreen.width = canvas.width;
+    offscreen.height = canvas.height;
+    offscreen.getContext("2d").drawImage(canvas, 0, 0);
+    offscreen.toBlob((blob) => {
       if (!blob) return;
+      
       setNodePreviews((prev) =>
         prev.map((p) => {
           if (p.name === nameToSnapshot) {
@@ -76,10 +82,11 @@ export function FilterProvider({ children }) {
     }, "image/webp", 0.8); // webp saves ~60% size vs PNG
   }
 
-  }, [selectedNode, ready, registry]);
+  }, [nodes, selectedNode, ready, registry]);
 
   useEffect(() => {
     if (!ready) return;
+    if (order.every(name => filterValues?.[name] !== undefined)) return;
     const newFilterValues = {};
     order.forEach(name => {
       const filter = findFilter(name);

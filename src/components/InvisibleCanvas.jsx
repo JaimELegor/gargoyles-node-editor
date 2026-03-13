@@ -26,6 +26,8 @@ export default function CanvasPreview() {
 
   if (!imgDataURL) return null;
 
+  
+
   return (
     <div style={{ display: "none" }}>
       {theme === "neon" &&

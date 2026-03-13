@@ -19,8 +19,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import GithubAuthButton from './components/GitHubAuthBtn';
 import { FilterRegistryProvider } from './contexts/FilterRegistryContext';
 import { useFirstVisit } from './hooks/useFirstVisit';
+import { useNode } from './contexts/NodeContext';
 
 function AppContent() {
+  const { nodePreviews } = useNode();
   useFirstVisit();
   return (
     <>
